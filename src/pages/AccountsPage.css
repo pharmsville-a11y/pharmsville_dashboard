@@ -1,0 +1,108 @@
+.accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
+}
+
+.accounts__head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.accounts__head p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.accounts__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 18px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--panel-shadow);
+  outline: var(--panel-ring);
+}
+
+.accounts__form label {
+  display: flex;
+  min-width: 180px;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.accounts__form input,
+.accounts__form select,
+.accounts__form button,
+.accounts__table select {
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--canvas);
+  font-size: 14px;
+}
+
+.accounts__form button {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.accounts__error {
+  margin: 0;
+  color: var(--down);
+  font-size: 13px;
+}
+
+.accounts__ok {
+  margin: 0;
+  color: var(--up);
+  font-size: 13px;
+}
+
+.accounts__table-wrap {
+  overflow: auto;
+  padding: 8px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--panel-shadow);
+  outline: var(--panel-ring);
+}
+
+.accounts__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.accounts__table th,
+.accounts__table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #eef0f4;
+  text-align: left;
+  font-size: 14px;
+}
+
+.accounts__table th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.accounts__table td strong {
+  display: block;
+}
+
+.accounts__table td span {
+  color: var(--muted);
+  font-size: 12px;
+}

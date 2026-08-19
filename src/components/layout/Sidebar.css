@@ -1,0 +1,112 @@
+.sidebar {
+  display: flex;
+  width: 248px;
+  flex-shrink: 0;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding: 28px 18px;
+  background: var(--sidebar);
+}
+
+.sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  padding: 0 8px;
+}
+
+.sidebar__mark {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 8px 16px rgba(108, 92, 231, 0.28);
+}
+
+.sidebar__name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #7b8094;
+  font-size: 14px;
+  text-align: left;
+  transition: background 0.16s, color 0.16s;
+}
+
+.sidebar__item:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+}
+
+.sidebar__item.is-active {
+  background: #fff;
+  color: var(--brand);
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.08);
+}
+
+.sidebar__thought {
+  margin-top: 16px;
+  padding: 18px 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #e7f8ea 0%, #d8f3e0 100%);
+  color: #3d4a44;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.sidebar__thought-title {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sidebar__thought p {
+  margin: 0;
+}
+
+.sidebar__logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #7b8094;
+  font-size: 14px;
+  transition: background 0.16s, color 0.16s;
+}
+
+.sidebar__logout:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+}

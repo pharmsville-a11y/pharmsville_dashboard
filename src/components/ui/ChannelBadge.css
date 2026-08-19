@@ -1,0 +1,18 @@
+.channel-badge {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7), 0 4px 10px rgba(28, 28, 40, 0.12);
+}
+
+.channel-badge--sm {
+  width: 32px;
+  height: 32px;
+  font-size: 11px;
+}

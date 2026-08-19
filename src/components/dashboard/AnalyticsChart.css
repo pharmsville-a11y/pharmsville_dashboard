@@ -1,0 +1,19 @@
+.analytics {
+  height: 100%;
+  padding: 22px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--panel-shadow);
+  outline: var(--panel-ring);
+}
+
+.analytics h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.analytics__chart {
+  height: 260px;
+}
