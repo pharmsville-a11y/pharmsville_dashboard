@@ -1,0 +1,15 @@
+-- 매일 08:00 KST = 23:00 UTC
+-- Dashboard → Integrations → Cron 에서 쓰거나, SQL Editor에서 pg_cron 이 열려 있을 때만 실행하세요.
+-- Functions 배포와 COLLECT_SECRET 설정이 끝난 뒤에 켭니다.
+
+-- select cron.schedule(
+--   'collect-daily-kst',
+--   '0 23 * * *',
+--   $$
+--   select net.http_post(
+--     url := 'https://<PROJECT-REF>.supabase.co/functions/v1/collect-daily',
+--     headers := '{"Content-Type": "application/json", "x-collect-secret": "<COLLECT_SECRET>"}'::jsonb,
+--     body := '{}'::jsonb
+--   );
+--   $$
+-- );

@@ -1,0 +1,5 @@
+# A string used to represent a project. Used as the edge function slug prefix in some tooling.
+project_id = "channel-board"
+
+[functions.collect-daily]
+verify_jwt = false

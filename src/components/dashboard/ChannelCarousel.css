@@ -1,5 +1,5 @@
 .carousel {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .carousel__head {
@@ -20,42 +20,29 @@
   position: relative;
 }
 
-.carousel__scroller .slick-list {
-  margin: 0 -7px;
-  padding: 12px 4px 14px;
+.carousel__scroller {
+  padding: 12px 4px 4px;
   overflow: hidden;
 }
 
-.carousel__scroller .slick-track {
-  display: flex;
-  align-items: stretch;
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.carousel__slide {
+.carousel__scroller .swiper-slide {
+  width: 216px;
   height: auto;
-  /* padding: 0 7px; */
-}
-
-.carousel__slide > div {
-  height: 100%;
 }
 
 .carousel__card {
   width: 100%;
-  height: 100%;
   min-height: 148px;
   padding: 16px;
   border: 0;
   border-radius: 22px;
   text-align: left;
-  box-shadow: 0 8px 18px rgba(28, 28, 40, 0.05);
   transition: box-shadow 0.16s ease;
+  box-shadow: 0 0 0 2px #f3f3f3, 0 0 0 4px #f3f3f3;
 }
 
 .carousel__card:hover {
-  box-shadow: 0 14px 24px rgba(28, 28, 40, 0.08);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #fff;
 }
 
 .carousel__card.is-selected {

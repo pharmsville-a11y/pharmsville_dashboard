@@ -1,5 +1,8 @@
 .analytics {
+  display: flex;
   height: 100%;
+  min-height: 0;
+  flex-direction: column;
   padding: 22px;
   border-radius: 24px;
   background: #fff;
@@ -9,11 +12,20 @@
 
 .analytics h2 {
   margin: 0 0 16px;
+  flex-shrink: 0;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.03em;
 }
 
 .analytics__chart {
-  height: 260px;
+  flex: 1 1 auto;
+  min-height: 260px;
+  width: 100%;
+  transition: opacity 0.18s ease;
+}
+
+.analytics__chart.is-refreshing {
+  opacity: 0.45;
+  pointer-events: none;
 }

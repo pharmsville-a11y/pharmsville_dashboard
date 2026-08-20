@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import type { DateRangeKey, TimePoint } from '../../adapters/types'
 import { formatAxisTime, formatCompact, formatTooltipTime, formatWon } from '../../lib/format'
+import { cx } from '../../lib/cx'
 import './AnalyticsChart.css'
 
 function PurpleTooltip({
@@ -33,9 +34,11 @@ function PurpleTooltip({
 export function AnalyticsChart({
   series,
   range,
+  refreshing = false,
 }: {
   series: TimePoint[]
   range: DateRangeKey
+  refreshing?: boolean
 }) {
   const chartData = useMemo(
     () => series.map((point) => ({ time: point.timestamp, value: point.value })),
@@ -45,7 +48,7 @@ export function AnalyticsChart({
   return (
     <section className="analytics">
       <h2>통합 성과</h2>
-      <div className="analytics__chart">
+      <div className={cx('analytics__chart', refreshing && 'is-refreshing')}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid stroke="#eef0f4" />

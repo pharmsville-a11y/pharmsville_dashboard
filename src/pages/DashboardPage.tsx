@@ -26,7 +26,7 @@ function Skeleton() {
 }
 
 export function DashboardPage() {
-  const { data, status, range, setRange, selectedId, setSelectedId, selected } = useDashboard()
+  const { data, status, refreshing, range, setRange, selectedId, setSelectedId, selected } = useDashboard()
 
   if (status === 'error') {
     return (
@@ -63,6 +63,7 @@ export function DashboardPage() {
           sns={data.snsSeries}
           selected={selectedSeries}
           selectedName={selected?.name}
+          refreshing={refreshing}
         />
         <SnapshotPanel channel={selected} />
         <div className="dashboard-mid__period">
@@ -71,7 +72,7 @@ export function DashboardPage() {
       </div>
 
       <div className="dashboard-bottom">
-        <AnalyticsChart series={data.combinedSeries} range={range} />
+        <AnalyticsChart series={data.combinedSeries} range={range} refreshing={refreshing} />
         <Watchlist
           channels={data.channels}
           selectedId={selectedId}

@@ -4,6 +4,9 @@
 
 지금은 **화면 틀 + 가상 데이터**만 연결되어 있습니다. 실제 API는 아래 어댑터만 바꿔 끼우면 됩니다.
 
+Supabase 테이블·수집 Function 안내는 [supabase/README.md](supabase/README.md) 를 보세요.
+
+
 ## 실행
 
 Node.js 18 이상이 필요합니다.
@@ -15,6 +18,45 @@ npm run dev
 ```
 
 브라우저에서 Vite가 안내하는 주소(보통 `http://localhost:5173`)를 엽니다.
+
+## GitHub Pages (임시 배포)
+
+개인 계정이 아니라 **회사 GitHub 조직**에 올린 뒤 Pages로 엽니다. 프론트는 mock 화면이라 API 키는 올라가지 않습니다. `.env.local`은 커밋하지 마세요.
+
+### 1. 회사 계정으로 로그인
+
+브라우저에서 [https://github.com/logout](https://github.com/logout) 후 **회사/조직 계정**으로 로그인합니다.  
+PC의 `git`도 같은 계정이어야 푸시가 됩니다. 개인 계정으로 로그인돼 있으면 조직 레포에 권한이 없습니다.
+
+### 2. 조직에 빈 저장소 만들기
+
+1. 회사 Organization 페이지 → **New repository**
+2. 이름 예: `channel-dashboard`
+3. Private 권장 (내부 도구). Private Pages는 GitHub Team/Enterprise가 필요합니다. Free 조직이면 일단 Public으로만 Pages가 됩니다.
+4. README/gitignore는 추가하지 않습니다. 로컬에 이미 있습니다.
+
+### 3. Pages 소스
+
+저장소 → **Settings → Pages**
+
+- Source: **GitHub Actions**
+
+조직에서 Pages가 꺼져 있으면 Org Owner가 **Settings → Member privileges / Pages** 에서 허용해야 합니다.
+
+### 4. 이 PC에서 원격만 연결
+
+조직명과 저장소 이름을 바꿔 실행합니다. 푸시는 확인 후에 하면 됩니다.
+
+```bash
+git remote add origin https://github.com/<ORG>/<REPO>.git
+git remote -v
+```
+
+`main`에 푸시되면 `.github/workflows/deploy-pages.yml`이 빌드해서  
+`https://<ORG>.github.io/<REPO>/` 로 배포합니다.
+
+로컬 `npm run dev`는 예전처럼 `http://localhost:5173` 입니다.
+
 
 ## 폴더 구조
 

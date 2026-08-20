@@ -42,6 +42,7 @@ export function TrendChart({
   sns,
   selected,
   selectedName,
+  refreshing = false,
 }: {
   range: DateRangeKey
   onRangeChange: (key: DateRangeKey) => void
@@ -50,6 +51,7 @@ export function TrendChart({
   sns: TimePoint[]
   selected: TimePoint[]
   selectedName?: string
+  refreshing?: boolean
 }) {
   const [tab, setTab] = useState<ChartTab>('combined')
   const series =
@@ -102,7 +104,7 @@ export function TrendChart({
         </div>
       </div>
 
-      <div className="trend__chart">
+      <div className={cx('trend__chart', refreshing && 'is-refreshing')}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="#eef0f4" />
@@ -134,7 +136,7 @@ export function TrendChart({
         </ResponsiveContainer>
       </div>
 
-      <div className="trend__stats">
+      <div className={cx('trend__stats', refreshing && 'is-refreshing')}>
         {[
           ['High', high],
           ['Low', low],

@@ -74,6 +74,13 @@
 
 .trend__chart {
   height: 210px;
+  transition: opacity 0.18s ease;
+}
+
+.trend__chart.is-refreshing,
+.trend__stats.is-refreshing {
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 .trend__stats {
