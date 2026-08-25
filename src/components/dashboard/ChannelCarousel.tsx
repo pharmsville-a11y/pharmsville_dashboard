@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { FreeMode } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import type { Swiper as SwiperClass } from 'swiper'
@@ -13,8 +13,8 @@ import { Sparkline } from '../ui/Sparkline'
 import './ChannelCarousel.css'
 
 function primaryText(channel: ChannelSummary): string {
-  if (channel.kind === 'commerce') return formatWon(channel.primaryValue)
-  return formatNumber(channel.primaryValue)
+  if (channel.kind === 'sns') return formatNumber(channel.primaryValue)
+  return formatWon(channel.primaryValue)
 }
 
 function syncArrows(
@@ -32,10 +32,14 @@ export function ChannelCarousel({
   channels,
   selectedId,
   onSelect,
+  title = '내 채널',
+  sourceNote,
 }: {
   channels: ChannelSummary[]
   selectedId: string | null
   onSelect: (id: string) => void
+  title?: string
+  sourceNote?: string
 }) {
   const [swiper, setSwiper] = useState<SwiperClass | null>(null)
   const [canPrev, setCanPrev] = useState(false)
@@ -59,7 +63,8 @@ export function ChannelCarousel({
   return (
     <section className="carousel">
       <div className="carousel__head">
-        <h2>내 채널</h2>
+        <h2>{title}</h2>
+        {sourceNote ? <p className="carousel__source">{sourceNote}</p> : null}
       </div>
       <div className="carousel__wrap">
         <Swiper
@@ -83,7 +88,7 @@ export function ChannelCarousel({
           onFromEdge={(instance) => syncArrows(instance, setCanPrev, setCanNext)}
           onToEdge={(instance) => syncArrows(instance, setCanPrev, setCanNext)}
         >
-          {channels.map((channel) => {
+          {channels.map((channel, index) => {
             const up = channel.changePct >= 0
             return (
               <SwiperSlide key={channel.id}>
@@ -91,14 +96,17 @@ export function ChannelCarousel({
                   type="button"
                   onClick={() => onSelect(channel.id)}
                   className={cx('carousel__card', channel.id === selectedId && 'is-selected')}
-                  style={{ background: channel.accent }}
+                  style={{ background: channel.accent, '--reveal-i': index } as CSSProperties}
                 >
                   <div className="carousel__top">
                     <div className="carousel__meta">
                       <ChannelBadge channel={channel} />
                       <div>
                         <p className="carousel__name">{channel.name}</p>
-                        <p className="carousel__ticker">{channel.ticker}</p>
+                        <p className="carousel__ticker">
+                          {channel.ticker}
+                          {channel.sourceLive ? <span className="carousel__live">LIVE</span> : null}
+                        </p>
                       </div>
                     </div>
                     <span className={cx('carousel__change', up ? 'is-up' : 'is-down')}>
@@ -106,6 +114,7 @@ export function ChannelCarousel({
                     </span>
                   </div>
                   <p className="carousel__value">{primaryText(channel)}</p>
+                  {channel.kind === 'ads' ? <p className="carousel__ad">{channel.primaryLabel}</p> : null}
                   <Sparkline data={channel.sparkline} color={channel.sparkColor} />
                 </button>
               </SwiperSlide>
@@ -114,7 +123,7 @@ export function ChannelCarousel({
         </Swiper>
         <button
           type="button"
-          aria-label="이전 채널"
+          aria-label="이전"
           disabled={!canPrev}
           onClick={() => handleNav(-1)}
           className={cx('carousel__arrow', 'carousel__arrow--prev', !canPrev && 'is-hidden')}
@@ -123,7 +132,7 @@ export function ChannelCarousel({
         </button>
         <button
           type="button"
-          aria-label="다음 채널"
+          aria-label="다음"
           disabled={!canNext}
           onClick={() => handleNav(1)}
           className={cx('carousel__arrow', 'carousel__arrow--next', !canNext && 'is-hidden')}

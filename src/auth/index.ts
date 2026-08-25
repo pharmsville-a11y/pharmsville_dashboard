@@ -4,4 +4,4 @@ export { can, canAccessPage, canViewSensitiveMetrics, isChannelAllowed, visibleN
 export { AuthProvider, useAuth, useCurrentUser } from './AuthProvider'
 export { presentSnapshot } from './redact'
 export { IfCapable } from './IfCapable'
-export { SEED_ACCOUNTS } from './accounts'
+export { SEED_ACCOUNTS, displayName } from './accounts'

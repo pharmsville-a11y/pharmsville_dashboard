@@ -1,37 +1,60 @@
-import { SEED_ACCOUNTS } from '../auth/accounts'
-import { ROLE_LABEL } from '../auth/types'
+import { type FormEvent, useState } from 'react'
 import { useAuth } from '../auth'
 import './LoginPage.css'
 
 export function LoginPage() {
-  const { login, accounts } = useAuth()
-  const list = accounts.length ? accounts : SEED_ACCOUNTS
+  const { login } = useAuth()
+  const [loginId, setLoginId] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    setError('')
+    setPending(true)
+    try {
+      await login(loginId, password)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '로그인하지 못했습니다.')
+    } finally {
+      setPending(false)
+    }
+  }
 
   return (
     <div className="login">
       <div className="login__panel">
         <p className="login__kicker">채널보드</p>
-        <h1>계정으로 들어가기</h1>
-        <p className="login__lead">
-          최고관리자만 계정을 만들고 권한을 부여합니다. 마케터 계정에는 광고비·ROI가 데이터에서부터
-          빠집니다.
-        </p>
-        <ul className="login__list">
-          {list.map((account) => (
-            <li key={account.id}>
-              <button type="button" className="login__card" onClick={() => login(account.id)}>
-                <span className="login__avatar">{account.initials}</span>
-                <span className="login__meta">
-                  <strong>{account.name}</strong>
-                  <span>
-                    {ROLE_LABEL[account.role]} · {account.title}
-                  </span>
-                  {account.note ? <em>{account.note}</em> : null}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <h1>로그인</h1>
+        <p className="login__lead">계정 ID와 비밀번호는 최고관리자가 발급합니다.</p>
+        <form className="login__form" onSubmit={handleSubmit}>
+          <label>
+            계정 ID
+            <input
+              value={loginId}
+              onChange={(event) => setLoginId(event.target.value)}
+              autoComplete="username"
+              placeholder="계정 ID"
+              required
+            />
+          </label>
+          <label>
+            비밀번호
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              placeholder="비밀번호"
+              required
+            />
+          </label>
+          {error ? <p className="login__error">{error}</p> : null}
+          <button type="submit" className="login__submit" disabled={pending}>
+            {pending ? '확인 중…' : '로그인'}
+          </button>
+        </form>
       </div>
     </div>
   )

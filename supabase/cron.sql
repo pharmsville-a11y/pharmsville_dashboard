@@ -1,15 +1,18 @@
--- 매일 08:00 KST = 23:00 UTC
+-- 매시 정각 KST = 매시 정각 UTC (시차 9시간이라 분·초는 같음)
+-- 날짜 파라미터 없이 호출하면 오늘을 수집하고, 08:00 KST에는 어제 완성치도 함께 닫습니다.
 -- Dashboard → Integrations → Cron 에서 쓰거나, SQL Editor에서 pg_cron 이 열려 있을 때만 실행하세요.
 -- Functions 배포와 COLLECT_SECRET 설정이 끝난 뒤에 켭니다.
 
+-- select cron.unschedule('collect-daily-kst');
 -- select cron.schedule(
---   'collect-daily-kst',
---   '0 23 * * *',
+--   'collect-hourly-kst',
+--   '0 * * * *',
 --   $$
 --   select net.http_post(
 --     url := 'https://<PROJECT-REF>.supabase.co/functions/v1/collect-daily',
 --     headers := '{"Content-Type": "application/json", "x-collect-secret": "<COLLECT_SECRET>"}'::jsonb,
---     body := '{}'::jsonb
+--     body := '{}'::jsonb,
+--     timeout_milliseconds := 60000
 --   );
 --   $$
 -- );

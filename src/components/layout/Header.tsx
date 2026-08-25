@@ -1,16 +1,19 @@
 import { Bell, Search } from 'lucide-react'
-import { ROLE_LABEL, useCurrentUser } from '../../auth'
+import { displayName, ROLE_LABEL, useCurrentUser } from '../../auth'
+import type { PageId } from './types'
 import './Header.css'
 
-export function Header() {
+export function Header({ page }: { page?: PageId }) {
   const user = useCurrentUser()
+  const subtitle =
+    page === 'marketing' ? '광고 SA·DA 성과만 모았습니다' : '오늘 채널 성과를 한눈에 보세요'
 
   return (
     <header className="header">
       <div className="header__intro">
-        <h1>안녕하세요, {user.name}님</h1>
+        <h1>안녕하세요, {displayName(user)}님</h1>
         <p className="header__sub">
-          {ROLE_LABEL[user.role]} · 오늘 채널 성과를 한눈에 보세요
+          {ROLE_LABEL[user.role]} · {subtitle}
         </p>
       </div>
 

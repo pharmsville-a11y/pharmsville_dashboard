@@ -1,5 +1,9 @@
 import type { ChannelKind, ChannelMeta } from '../types'
 
+/**
+ * 사방넷 연동 전 매출·SNS 목업. 대시보드 채널 카드에 씁니다.
+ * 광고비는 이 값이 아니라 네이버·쿠팡·구글 SA/DA 실측을 붙입니다.
+ */
 export interface MockChannelSeed extends ChannelMeta {
   kind: ChannelKind
   changePct: number

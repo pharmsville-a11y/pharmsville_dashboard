@@ -8,21 +8,21 @@ export function Watchlist({
   channels,
   selectedId,
   onSelect,
+  title = '채널 워치리스트',
 }: {
   channels: ChannelSummary[]
   selectedId: string | null
   onSelect: (id: string) => void
+  title?: string
 }) {
   return (
     <section className="watchlist">
-      <h2>채널 워치리스트</h2>
+      <h2>{title}</h2>
       <ul>
         {channels.map((channel) => {
           const up = channel.changePct >= 0
           const value =
-            channel.kind === 'commerce'
-              ? formatWon(channel.primaryValue)
-              : formatNumber(channel.primaryValue)
+            channel.kind === 'sns' ? formatNumber(channel.primaryValue) : formatWon(channel.primaryValue)
 
           return (
             <li key={channel.id}>

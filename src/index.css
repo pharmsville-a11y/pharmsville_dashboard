@@ -101,3 +101,29 @@ input:focus-visible {
 .chart-tooltip--lg .chart-tooltip__value {
   font-size: 18px;
 }
+
+@keyframes page-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--reveal-x, 0px), var(--reveal-y, 0px), 0) scale(var(--reveal-s, 0.94));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-enter .carousel__head,
+  .is-enter .carousel__card,
+  .is-enter .dashboard-mid > *,
+  .is-enter .dashboard-bottom > *,
+  .is-enter.placeholder,
+  .is-enter.placeholder h2,
+  .is-enter.placeholder p,
+  .is-enter > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

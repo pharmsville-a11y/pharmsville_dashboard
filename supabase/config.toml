@@ -3,3 +3,9 @@ project_id = "channel-board"
 
 [functions.collect-daily]
 verify_jwt = false
+
+[functions.query-snapshots]
+verify_jwt = false
+
+[functions.query-ads]
+verify_jwt = false

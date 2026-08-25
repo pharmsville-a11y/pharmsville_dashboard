@@ -1,8 +1,9 @@
 import { can, useCurrentUser } from '../auth'
 import type { PageId } from '../components/layout/types'
+import { usePageReady } from '../hooks/usePageReady'
 import './PlaceholderPage.css'
 
-export type PlaceholderPageId = Exclude<PageId, 'dashboard' | 'accounts'>
+export type PlaceholderPageId = Exclude<PageId, 'dashboard' | 'accounts' | 'marketing'>
 
 const COPY: Record<PlaceholderPageId, { title: string; body: string }> = {
   channels: {
@@ -12,10 +13,6 @@ const COPY: Record<PlaceholderPageId, { title: string; body: string }> = {
   commerce: {
     title: '매출·주문',
     body: '쇼핑 채널 주문/매출 리포트 자리를 마련해 두었습니다.',
-  },
-  marketing: {
-    title: '마케팅',
-    body: 'SNS·광고 캠페인 성과를 이 화면에 연결할 수 있습니다.',
   },
   settlement: {
     title: '정산',
@@ -35,9 +32,10 @@ export function PlaceholderPage({ page }: { page: PlaceholderPageId }) {
   const user = useCurrentUser()
   const content = COPY[page]
   const hideCost = !can(user.role, 'metrics.adSpend')
+  usePageReady(page)
 
   return (
-    <section className="placeholder">
+    <section className="placeholder is-enter">
       <h2>{content.title}</h2>
       <p>{content.body}</p>
       {hideCost ? (

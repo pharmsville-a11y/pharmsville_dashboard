@@ -23,7 +23,10 @@ export type Capability =
 
 export interface AppUser {
   id: string
+  loginId: string
+  passwordHash: string
   name: string
+  nickname?: string
   title: string
   initials: string
   role: Role
@@ -40,5 +43,5 @@ export const ROLE_LABEL: Record<Role, string> = {
 export const ROLE_DESCRIPTION: Record<Role, string> = {
   admin: '계정 생성과 권한 부여, 모든 화면·지표',
   master: '모든 채널·매출·광고비·ROI. 계정 생성은 불가',
-  manager: '배정 채널의 매출·주문·추이만. 광고비·ROI 비공개',
+  manager: '배정 채널의 매출·주문·추이만. 마케팅 메뉴·광고비·ROI 비공개',
 }

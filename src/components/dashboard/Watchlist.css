@@ -3,7 +3,6 @@
   padding: 22px 20px;
   border-radius: 24px;
   background: #fff;
-  box-shadow: var(--panel-shadow);
   outline: var(--panel-ring);
 }
 

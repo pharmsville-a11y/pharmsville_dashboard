@@ -10,8 +10,6 @@
 
 .summary__cards {
   flex: 1 1 0;
-  /* min-height: 0; */
-  max-height: 110px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -23,7 +21,6 @@
   overflow: visible;
   background: linear-gradient(160deg, #7a6ff0 0%, var(--brand) 55%, var(--brand-dark) 100%);
   color: #fff;
-  box-shadow: 0 14px 28px rgba(108, 92, 231, 0.28);
 }
 
 .summary__label {
@@ -64,11 +61,17 @@
 }
 
 .summary__ad {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+  flex: 1.6 1 0;
+  justify-content: flex-start;
   background: #2b2b35;
   color: #fff;
+}
+
+.summary__ad-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .summary__ad .summary__label {
@@ -81,6 +84,29 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+}
+
+.summary__ad-break {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summary__ad-break li {
+  display: grid;
+  grid-template-columns: 52px 1fr 1fr;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.82);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary__ad-plat {
+  font-weight: 700;
+  color: #fff;
 }
 
 .summary__ad-btn {
@@ -104,7 +130,6 @@
 
 .summary__top {
   background: #fff;
-  box-shadow: var(--panel-shadow);
   outline: var(--panel-ring);
 }
 

@@ -9,6 +9,23 @@ function omitAdSpend<T extends { adSpend?: number }>(metrics: T): Omit<T, 'adSpe
 }
 
 function redactChannel(channel: ChannelSummary): ChannelSummary {
+  if (channel.kind === 'ads') {
+    return {
+      ...channel,
+      primaryValue: 0,
+      sparkline: channel.sparkline.map(() => 0),
+      dayLow: 0,
+      dayHigh: 0,
+      yearLow: 0,
+      yearHigh: 0,
+      prevClose: 0,
+      open: 0,
+      liveAd: undefined,
+      commerce: channel.commerce ? omitAdSpend(channel.commerce) : undefined,
+      sns: channel.sns ? omitAdSpend(channel.sns) : undefined,
+    }
+  }
+
   return {
     ...channel,
     commerce: channel.commerce ? omitAdSpend(channel.commerce) : undefined,
@@ -31,7 +48,7 @@ function redactPeriodMap(map: PeriodTotalsMap): PeriodTotalsMap {
 
 export function presentSnapshot(snapshot: DashboardSnapshot, viewer: AppUser): DashboardSnapshot {
   const channels = snapshot.channels
-    .filter((channel) => isChannelAllowed(viewer, channel.id))
+    .filter((channel) => channel.kind === 'ads' || isChannelAllowed(viewer, channel.id))
     .map((channel) => (can(viewer.role, 'metrics.adSpend') ? channel : redactChannel(channel)))
 
   const allowedIds = new Set(channels.map((channel) => channel.id))
@@ -42,7 +59,7 @@ export function presentSnapshot(snapshot: DashboardSnapshot, viewer: AppUser): D
   const totals = can(viewer.role, 'metrics.adSpend')
     ? snapshot.totals
     : (() => {
-        const { adSpend: _hidden, ...rest } = snapshot.totals
+        const { adSpend: _hidden, adBreakdown: _break, ...rest } = snapshot.totals
         return rest
       })()
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AuthProvider, canAccessPage, useAuth } from './auth'
 import { AppLayout } from './components/layout/AppLayout'
+import { PageLoadProvider } from './components/layout/PageLoadContext'
 import type { PageId } from './components/layout/types'
 import { AccountsPage } from './pages/AccountsPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -23,7 +24,14 @@ function Shell() {
   return (
     <AppLayout page={activePage} onNavigate={setPage}>
       {activePage === 'dashboard' ? (
-        <DashboardPage />
+        <DashboardPage
+          key="sales"
+          onOpenMarketing={
+            canAccessPage(user.role, 'marketing') ? () => setPage('marketing') : undefined
+          }
+        />
+      ) : activePage === 'marketing' ? (
+        <DashboardPage key="ads" mode="ads" />
       ) : activePage === 'accounts' ? (
         <AccountsPage />
       ) : (
@@ -36,7 +44,9 @@ function Shell() {
 export default function App() {
   return (
     <AuthProvider>
-      <Shell />
+      <PageLoadProvider>
+        <Shell />
+      </PageLoadProvider>
     </AuthProvider>
   )
 }

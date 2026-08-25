@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -9,9 +9,25 @@ import {
   YAxis,
 } from 'recharts'
 import type { DateRangeKey, TimePoint } from '../../adapters/types'
-import { formatAxisTime, formatCompact, formatTooltipTime, formatWon } from '../../lib/format'
+import { formatCompact, formatTooltipTime, formatWon } from '../../lib/format'
 import { cx } from '../../lib/cx'
+import { AxisDateTimeTick } from './AxisDateTimeTick'
 import './AnalyticsChart.css'
+
+function HighlightDot({
+  cx,
+  cy,
+  payload,
+  highlightTime,
+}: {
+  cx?: number
+  cy?: number
+  payload?: { time?: string }
+  highlightTime?: string
+}) {
+  if (cx == null || cy == null || !highlightTime || payload?.time !== highlightTime) return null
+  return <circle cx={cx} cy={cy} r={6} fill="#6c5ce7" stroke="#fff" strokeWidth={2} />
+}
 
 function PurpleTooltip({
   active,
@@ -33,12 +49,18 @@ function PurpleTooltip({
 
 export function AnalyticsChart({
   series,
-  range,
+  range: _range,
   refreshing = false,
+  title = '통합 성과',
+  highlightTime,
+  lookup,
 }: {
   series: TimePoint[]
   range: DateRangeKey
   refreshing?: boolean
+  title?: string
+  highlightTime?: string
+  lookup?: ReactNode
 }) {
   const chartData = useMemo(
     () => series.map((point) => ({ time: point.timestamp, value: point.value })),
@@ -47,18 +69,21 @@ export function AnalyticsChart({
 
   return (
     <section className="analytics">
-      <h2>통합 성과</h2>
+      <div className="analytics__head">
+        <h2>{title}</h2>
+        {lookup}
+      </div>
       <div className={cx('analytics__chart', refreshing && 'is-refreshing')}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+          <LineChart data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#eef0f4" />
             <XAxis
               dataKey="time"
-              tickFormatter={(value: string) => formatAxisTime(value, range)}
-              tick={{ fontSize: 11, fill: '#8b8fa3' }}
+              tick={<AxisDateTimeTick />}
               axisLine={false}
               tickLine={false}
-              minTickGap={28}
+              minTickGap={44}
+              height={36}
             />
             <YAxis
               tickFormatter={(value: number) => formatCompact(value)}
@@ -73,7 +98,11 @@ export function AnalyticsChart({
               dataKey="value"
               stroke="#6c5ce7"
               strokeWidth={2.6}
-              dot={false}
+              dot={
+                highlightTime
+                  ? (props) => <HighlightDot {...props} highlightTime={highlightTime} />
+                  : false
+              }
               activeDot={{ r: 6, fill: '#6c5ce7', stroke: '#fff', strokeWidth: 2 }}
             />
           </LineChart>

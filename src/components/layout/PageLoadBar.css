@@ -1,0 +1,22 @@
+.page-load-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 80;
+  width: 100%;
+  height: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.page-load-bar.is-on {
+  opacity: 1;
+}
+
+.page-load-bar__fill {
+  height: 100%;
+  background: var(--brand);
+  box-shadow: 0 0 10px rgba(108, 92, 231, 0.55);
+  transition: width 0.2s ease;
+}

@@ -6,16 +6,28 @@
   padding: 22px;
   border-radius: 24px;
   background: #fff;
-  box-shadow: var(--panel-shadow);
   outline: var(--panel-ring);
 }
 
-.analytics h2 {
-  margin: 0 0 16px;
+.analytics__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.analytics__head h2 {
+  margin: 0;
   flex-shrink: 0;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.03em;
+}
+
+.analytics__head .snapshot-lookup {
+  margin-left: auto;
 }
 
 .analytics__chart {

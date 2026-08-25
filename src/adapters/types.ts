@@ -1,6 +1,6 @@
-export type ChannelKind = 'commerce' | 'sns'
+export type ChannelKind = 'commerce' | 'sns' | 'ads'
 
-export type DateRangeKey = '1D' | '5D' | '1M' | '6M' | '1Y' | 'ALL'
+export type DateRangeKey = '1D' | '7D' | '1M' | '6M' | '1Y' | 'ALL'
 
 export type SummaryPeriod = 'daily' | 'weekly' | 'monthly'
 
@@ -16,10 +16,41 @@ export interface TimePoint {
 }
 
 export interface CommerceMetrics {
-  sales: number
-  orders: number
-  conversionRate: number
+  sales?: number
+  orders?: number
+  conversionRate?: number
   adSpend?: number
+}
+
+export interface LiveAdCampaign {
+  id: string
+  name: string
+  campaignTp: string
+  adSpend: number
+  impressions: number
+  clicks: number
+  conversions: number
+  convAmt: number
+}
+
+export interface LiveAdMetrics {
+  impressions: number
+  clicks: number
+  conversions: number
+  convAmt: number
+  viewCnt: number
+  ctr: number
+  cpc: number
+  crto: number
+  ror: number
+  cpConv: number
+  avgRnk: number | null
+  pcNxAvgRnk: number | null
+  mblNxAvgRnk: number | null
+  recentAvgRnk: number | null
+  recentAvgCpc: number | null
+  campaignCount: number
+  campaigns: LiveAdCampaign[]
 }
 
 export interface SnsMetrics {
@@ -45,6 +76,7 @@ export interface ChannelSummary {
   sparkline: number[]
   commerce?: CommerceMetrics
   sns?: SnsMetrics
+  liveAd?: LiveAdMetrics
   dayLow: number
   dayHigh: number
   yearLow: number
@@ -53,6 +85,10 @@ export interface ChannelSummary {
   open: number
   tradeTime: string
   tradeDate: string
+  source?: string
+  sourceLive?: boolean
+  platform?: 'naver' | 'coupang' | 'google'
+  product?: 'sa' | 'da'
 }
 
 export interface ChannelMeta {

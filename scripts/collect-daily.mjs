@@ -56,11 +56,15 @@ async function collect(url, secret, date) {
 
 loadEnv();
 
-const url = process.env.COLLECT_URL?.trim();
-const secret = process.env.COLLECT_SECRET?.trim();
-if (!url || !secret || url.includes("YOUR_PROJECT_REF")) {
+const secret = (process.env.COLLECT_SECRET || process.env.VITE_QUERY_SECRET || "").trim();
+const queryUrl = (process.env.COLLECT_URL || process.env.VITE_QUERY_URL || "").trim();
+const url = queryUrl
+  .replace(/\/functions\/v1\/query-ads\/?$/, "/functions/v1/collect-daily")
+  .replace(/\/functions\/v1\/query-snapshots\/?$/, "/functions/v1/collect-daily");
+
+if (!url || !secret || url.includes("YOUR_PROJECT_REF") || !url.includes("collect-daily")) {
   console.error("프로젝트 루트에 .env.local 을 만들고 COLLECT_URL 과 COLLECT_SECRET 을 넣으세요.");
-  console.error("예시는 .env.example 을 보세요.");
+  console.error("VITE_QUERY_URL / VITE_QUERY_SECRET 이 있으면 그 값으로도 수집을 돌립니다.");
   process.exit(1);
 }
 

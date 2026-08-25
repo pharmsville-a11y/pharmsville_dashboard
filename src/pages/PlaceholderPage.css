@@ -7,6 +7,36 @@
   outline: var(--panel-ring);
 }
 
+.placeholder.is-enter,
+.placeholder.is-enter h2,
+.placeholder.is-enter p {
+  --reveal-x: 0px;
+  --reveal-y: 0px;
+  --reveal-s: 0.94;
+  animation: page-reveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.placeholder.is-enter {
+  --reveal-s: 0.97;
+  animation-duration: 0.5s;
+}
+
+.placeholder.is-enter h2 {
+  --reveal-y: 18px;
+  animation-delay: 70ms;
+}
+
+.placeholder.is-enter p {
+  --reveal-y: -14px;
+  animation-delay: 140ms;
+}
+
+.placeholder.is-enter .placeholder__hint {
+  --reveal-y: 0px;
+  --reveal-s: 0.9;
+  animation-delay: 210ms;
+}
+
 .placeholder h2 {
   margin: 0;
   font-size: 24px;

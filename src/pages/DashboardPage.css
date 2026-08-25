@@ -5,6 +5,78 @@
   padding-bottom: 32px;
 }
 
+.dashboard.is-enter {
+  overflow-x: clip;
+}
+
+.dashboard.is-enter .carousel__head,
+.dashboard.is-enter .carousel__card,
+.dashboard.is-enter .dashboard-mid > *,
+.dashboard.is-enter .dashboard-bottom > * {
+  animation: page-reveal 0.62s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dashboard.is-enter .carousel__scroller {
+  overflow: visible;
+}
+
+.dashboard.is-enter .carousel__head {
+  --reveal-x: 0px;
+  --reveal-y: 28px;
+  --reveal-s: 0.96;
+  animation-delay: 50ms;
+}
+
+.dashboard.is-enter .carousel__card {
+  --from-center: calc(var(--reveal-i, 0) - (var(--reveal-count, 1) - 1) / 2);
+  --reveal-x: calc(var(--from-center) * -20px);
+  --reveal-y: 24px;
+  --reveal-s: 0.92;
+  animation-delay: calc(90ms + abs(var(--from-center)) * 44ms);
+}
+
+.dashboard.is-enter .dashboard-mid > *:nth-child(1) {
+  --reveal-x: 42px;
+  --reveal-y: 6px;
+  --reveal-s: 0.94;
+  animation-delay: 80ms;
+}
+
+.dashboard.is-enter .dashboard-mid > *:nth-child(2) {
+  --reveal-x: 0px;
+  --reveal-y: 0px;
+  --reveal-s: 0.9;
+  animation-delay: 20ms;
+}
+
+.dashboard.is-enter .dashboard-mid > *:nth-child(3) {
+  --reveal-x: -42px;
+  --reveal-y: 6px;
+  --reveal-s: 0.94;
+  animation-delay: 80ms;
+}
+
+.dashboard.is-enter .dashboard-mid > *:nth-child(4) {
+  --reveal-x: 0px;
+  --reveal-y: 24px;
+  --reveal-s: 0.96;
+  animation-delay: 120ms;
+}
+
+.dashboard.is-enter .dashboard-bottom > *:nth-child(1) {
+  --reveal-x: 36px;
+  --reveal-y: -36px;
+  --reveal-s: 0.94;
+  animation-delay: 120ms;
+}
+
+.dashboard.is-enter .dashboard-bottom > *:nth-child(2) {
+  --reveal-x: -36px;
+  --reveal-y: -36px;
+  --reveal-s: 0.94;
+  animation-delay: 120ms;
+}
+
 .dashboard-error {
   padding: 15px 16px;
   border-radius: 16px;
@@ -75,14 +147,25 @@
 @media (min-width: 1280px) {
   .dashboard-mid {
     grid-template-columns: 280px minmax(0, 1fr) 300px;
+    grid-template-areas:
+      'side trend period'
+      'snap snap snap';
   }
 
   .dashboard-mid__side {
-    grid-row: span 1;
+    grid-area: side;
+  }
+
+  .dashboard-mid .trend {
+    grid-area: trend;
   }
 
   .dashboard-mid__period {
-    grid-column: span 3;
+    grid-area: period;
+  }
+
+  .dashboard-mid .snapshot {
+    grid-area: snap;
   }
 
   .dashboard-bottom {

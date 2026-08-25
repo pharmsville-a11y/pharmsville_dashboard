@@ -13,25 +13,27 @@ const PERIOD_TABS: Array<{ id: SummaryPeriod; label: string }> = [
   { id: 'monthly', label: 'Monthly' },
 ]
 
-const TOP_LABEL: Record<SummaryPeriod, string> = {
-  daily: '오늘 톱 채널',
-  weekly: '이번 주 톱 채널',
-  monthly: '이번 달 톱 채널',
-}
-
 export function PeriodSummary({
   periodTotals,
   channels,
+  mode = 'sales',
+  aside = false,
 }: {
   periodTotals: PeriodTotalsMap
   channels: ChannelSummary[]
+  mode?: 'sales' | 'ads'
+  aside?: boolean
 }) {
   const [period, setPeriod] = useState<SummaryPeriod>('daily')
   const selected = periodTotals[period]
   const periodTop = channels.find((channel) => channel.id === selected.topChannelId)
+  const topLabel =
+    mode === 'ads'
+      ? { daily: '오늘 톱 광고', weekly: '이번 주 톱 광고', monthly: '이번 달 톱 광고' }
+      : { daily: '오늘 톱 채널', weekly: '이번 주 톱 채널', monthly: '이번 달 톱 채널' }
 
   return (
-    <section className="period">
+    <section className={cx('period', aside && 'period--aside')}>
       <div className="period__head">
         <div className="period__tabs">
           {PERIOD_TABS.map((tab) => (
@@ -49,28 +51,37 @@ export function PeriodSummary({
       </div>
 
       <div className="period__grid">
-        <div className="period__cell">
-          <p className="period__label">매출</p>
-          <div className="period__value-row">
-            <p className="period__value">{formatWon(selected.sales)}</p>
-            <span className={cx('period__change', selected.salesChangePct >= 0 ? 'is-up' : 'is-down')}>
-              {formatPct(selected.salesChangePct)}
-            </span>
+        {mode === 'sales' ? (
+          <div className="period__cell">
+            <p className="period__label">매출</p>
+            <div className="period__value-row">
+              <p className="period__value">{formatWon(selected.sales)}</p>
+              <span className={cx('period__change', selected.salesChangePct >= 0 ? 'is-up' : 'is-down')}>
+                {formatPct(selected.salesChangePct)}
+              </span>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <IfCapable capability="metrics.adSpend">
           {typeof selected.adSpend === 'number' ? (
             <div className="period__cell">
               <p className="period__label">광고비</p>
-              <p className="period__value">{formatWon(selected.adSpend)}</p>
+              <div className="period__value-row">
+                <p className="period__value">{formatWon(selected.adSpend)}</p>
+                {mode === 'ads' ? (
+                  <span className={cx('period__change', selected.salesChangePct >= 0 ? 'is-up' : 'is-down')}>
+                    {formatPct(selected.salesChangePct)}
+                  </span>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </IfCapable>
 
         {periodTop ? (
           <div className="period__cell">
-            <p className="period__label">{TOP_LABEL[period]}</p>
+            <p className="period__label">{topLabel[period]}</p>
             <div className="period__top">
               <div className="period__top-name">
                 <ChannelBadge channel={periodTop} size="sm" />

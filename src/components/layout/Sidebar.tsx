@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import {
   BarChart3,
   BookOpen,
+  CalendarClock,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -12,7 +14,19 @@ import {
 import { canAccessPage, useAuth, visibleNavItems } from '../../auth'
 import type { PageId } from './types'
 import { cx } from '../../lib/cx'
+import { formatKstClock, formatKstDate, formatKstWeekday } from '../../lib/kst'
 import './Sidebar.css'
+
+function useNow(intervalMs = 1000) {
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), intervalMs)
+    return () => window.clearInterval(id)
+  }, [intervalMs])
+
+  return now
+}
 
 const NAV = [
   { id: 'dashboard' as const, label: '대시보드', icon: LayoutDashboard },
@@ -33,6 +47,7 @@ export function Sidebar({
   onNavigate: (id: PageId) => void
 }) {
   const { user, logout } = useAuth()
+  const now = useNow()
   const items = user ? visibleNavItems(user.role, NAV) : []
 
   return (
@@ -61,6 +76,25 @@ export function Sidebar({
           )
         })}
       </nav>
+
+      <time
+        className="sidebar__clock"
+        dateTime={now.toISOString()}
+        aria-label={`${formatKstWeekday(now)} ${formatKstDate(now)} ${formatKstClock(now)}`}
+      >
+        <span className="sidebar__clock-head">
+          <span className="sidebar__clock-icon" aria-hidden>
+            <CalendarClock size={16} strokeWidth={2.2} />
+          </span>
+          <span className="sidebar__clock-weekday">{formatKstWeekday(now)}</span>
+          <span className="sidebar__clock-live">
+            <span className="sidebar__clock-dot" aria-hidden />
+            KST
+          </span>
+        </span>
+        <span className="sidebar__clock-time">{formatKstClock(now)}</span>
+        <span className="sidebar__clock-date">{formatKstDate(now)}</span>
+      </time>
 
       <div className="sidebar__thought">
         <p className="sidebar__thought-title">Thought Time</p>

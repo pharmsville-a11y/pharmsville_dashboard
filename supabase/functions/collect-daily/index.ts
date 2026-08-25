@@ -2,22 +2,45 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const COMPANY_ID = "internal";
 
-const CHANNELS = [
-  { id: "makeshop", kind: "commerce", sales: 4230000, orders: 186, conversionRate: 0.032, adSpend: 420000 },
-  { id: "naver", kind: "commerce", sales: 3180000, orders: 142, conversionRate: 0.028, adSpend: 310000 },
-  { id: "coupang_1", kind: "commerce", sales: 1680000, orders: 118, conversionRate: 0.021, adSpend: 320000 },
-  { id: "coupang_2", kind: "commerce", sales: 1210000, orders: 86, conversionRate: 0.019, adSpend: 240000 },
-  { id: "elevenst", kind: "commerce", sales: 980000, orders: 54, conversionRate: 0.018, adSpend: 180000 },
-  { id: "instagram", kind: "sns", followers: 28400, reach: 196000, engagementRate: 0.041, adSpend: 240000 },
-  { id: "youtube", kind: "sns", followers: 12600, reach: 312000, engagementRate: 0.056, adSpend: 190000 },
-  { id: "kakao", kind: "sns", followers: 9100, reach: 74000, engagementRate: 0.022, adSpend: 88000 },
-  { id: "blog", kind: "sns", followers: 5400, reach: 38000, engagementRate: 0.031, adSpend: 42000 },
-] as const;
+/**
+ * 광고 수집 스위치. 프론트 src/ads/catalog.ts 와 맞출 것.
+ * 판매 채널은 사방넷 예정이라 여기서 모으지 않는다.
+ */
+const AD_COLLECTORS: Record<string, { enabled: boolean }> = {
+  naver: { enabled: true },
+  coupang: { enabled: false },
+  google: { enabled: false },
+};
 
-function kstDate(offsetDays = 0): string {
+type SnapshotInsert = {
+  company_id: string;
+  snapshot_date: string;
+  period: "daily";
+  channel_id: string;
+  kind: "commerce" | "sns";
+  source: string;
+  sales: number | null;
+  orders: number | null;
+  conversion_rate: number | null;
+  ad_spend: number | null;
+  followers: number | null;
+  reach: number | null;
+  engagement_rate: number | null;
+  extra: Record<string, unknown>;
+};
+
+function isAdCollectorEnabled(id: string) {
+  return AD_COLLECTORS[id]?.enabled === true;
+}
+
+function kstNow(): Date {
   const now = new Date();
   const utc = now.getTime() + now.getTimezoneOffset() * 60_000;
-  const kst = new Date(utc + 9 * 60 * 60 * 1000);
+  return new Date(utc + 9 * 60 * 60 * 1000);
+}
+
+function kstDate(offsetDays = 0): string {
+  const kst = kstNow();
   kst.setDate(kst.getDate() + offsetDays);
   const y = kst.getFullYear();
   const m = String(kst.getMonth() + 1).padStart(2, "0");
@@ -25,53 +48,18 @@ function kstDate(offsetDays = 0): string {
   return `${y}-${m}-${d}`;
 }
 
-function hash(value: string): number {
-  let total = 0;
-  for (let i = 0; i < value.length; i += 1) total = (total * 31 + value.charCodeAt(i)) >>> 0;
-  return total;
+function collectDates(requested: string | null): string[] {
+  if (requested) return [requested];
+  const today = kstDate(0);
+  if (kstNow().getHours() !== 8) return [today];
+  const yesterday = kstDate(-1);
+  return yesterday === today ? [today] : [yesterday, today];
 }
 
-function scale(base: number, date: string, salt: string): number {
-  const jitter = 0.88 + (hash(`${date}:${salt}`) % 25) / 100;
-  return Math.max(0, Math.round(base * jitter));
-}
-
-function mockRow(channel: (typeof CHANNELS)[number], date: string) {
-  if (channel.kind === "commerce") {
-    return {
-      company_id: COMPANY_ID,
-      snapshot_date: date,
-      period: "daily",
-      channel_id: channel.id,
-      kind: channel.kind,
-      source: "mock",
-      sales: scale(channel.sales, date, `${channel.id}:sales`),
-      orders: scale(channel.orders, date, `${channel.id}:orders`),
-      conversion_rate: channel.conversionRate,
-      ad_spend: scale(channel.adSpend, date, `${channel.id}:ad`),
-      followers: null,
-      reach: null,
-      engagement_rate: null,
-      extra: {},
-    };
-  }
-
-  return {
-    company_id: COMPANY_ID,
-    snapshot_date: date,
-    period: "daily",
-    channel_id: channel.id,
-    kind: channel.kind,
-    source: "mock",
-    sales: null,
-    orders: null,
-    conversion_rate: null,
-    ad_spend: scale(channel.adSpend, date, `${channel.id}:ad`),
-    followers: scale(channel.followers, date, `${channel.id}:followers`),
-    reach: scale(channel.reach, date, `${channel.id}:reach`),
-    engagement_rate: channel.engagementRate,
-    extra: {},
-  };
+function snapshotHourForDate(date: string): number {
+  const today = kstDate(0);
+  if (date < today) return 23;
+  return kstNow().getHours();
 }
 
 async function hmacSha256(secret: string, message: string): Promise<ArrayBuffer> {
@@ -275,6 +263,324 @@ function campaignIdOf(item: unknown): string | null {
   return idText(record.nccCampaignId ?? record.campaignId ?? record.id);
 }
 
+function campaignTpOf(item: unknown): string {
+  if (!item || typeof item !== "object") return "UNKNOWN";
+  const record = item as Record<string, unknown>;
+  const raw = record.campaignTp ?? record.campaignType ?? record.tp;
+  if (typeof raw === "string" && raw) return raw;
+  if (typeof raw === "number" && Number.isFinite(raw)) return String(raw);
+  return "UNKNOWN";
+}
+
+function campaignNameOf(item: unknown): string {
+  if (!item || typeof item !== "object") return "";
+  const record = item as Record<string, unknown>;
+  return typeof record.name === "string" ? record.name : "";
+}
+
+function pickMeta(item: unknown, keys: string[]): Record<string, unknown> {
+  if (!item || typeof item !== "object") return {};
+  const record = item as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (record[key] !== undefined) out[key] = record[key];
+  }
+  return out;
+}
+
+const CAMPAIGN_META_KEYS = [
+  "name",
+  "userLock",
+  "status",
+  "statusReason",
+  "dailyBudget",
+  "useDailyBudget",
+  "deliveryMethod",
+  "usePeriod",
+  "periodStartDt",
+  "periodEndDt",
+  "sharedBudgetId",
+];
+
+const ADGROUP_META_KEYS = [
+  "name",
+  "nccCampaignId",
+  "userLock",
+  "status",
+  "statusReason",
+  "bidAmt",
+  "useDailyBudget",
+  "dailyBudget",
+  "adgroupType",
+];
+
+function campaignProduct(tp: string): "sa" | "da" {
+  const value = tp.toUpperCase();
+  if (value === "WEB_SITE" || value === "SHOPPING" || value === "1" || value === "2") return "sa";
+  return "da";
+}
+
+/** 검색광고 /stats 공식 지표. 합산 가능 값과 비율·순위 값을 나눈다. */
+const NAVER_STAT_FIELDS = [
+  "impCnt",
+  "clkCnt",
+  "ctr",
+  "cpc",
+  "salesAmt",
+  "ccnt",
+  "crto",
+  "convAmt",
+  "ror",
+  "cpConv",
+  "avgRnk",
+  "pcNxAvgRnk",
+  "mblNxAvgRnk",
+  "recentAvgRnk",
+  "recentAvgCpc",
+  "viewCnt",
+] as const;
+
+const NAVER_STAT_FIELDS_FALLBACK = NAVER_STAT_FIELDS.filter((key) => key !== "recentAvgCpc");
+
+type WeightAcc = { weighted: number; weight: number };
+
+function emptyWeight(): WeightAcc {
+  return { weighted: 0, weight: 0 };
+}
+
+function addWeighted(acc: WeightAcc, value: number, weight: number) {
+  if (!Number.isFinite(value) || !Number.isFinite(weight) || weight <= 0) return;
+  acc.weighted += value * weight;
+  acc.weight += weight;
+}
+
+function weightAvg(acc: WeightAcc): number | null {
+  if (acc.weight <= 0) return null;
+  return acc.weighted / acc.weight;
+}
+
+function statNumber(record: Record<string, unknown>, key: string): number {
+  const value = Number(record[key] ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function deriveRates(impressions: number, clicks: number, spend: number, conversions: number, convAmt: number) {
+  return {
+    ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+    cpc: clicks > 0 ? spend / clicks : 0,
+    crto: clicks > 0 ? (conversions / clicks) * 100 : 0,
+    ror: spend > 0 ? (convAmt / spend) * 100 : 0,
+    cpConv: conversions > 0 ? spend / conversions : 0,
+  };
+}
+
+type EntityStats = {
+  impCnt: number;
+  clkCnt: number;
+  salesAmt: number;
+  ccnt: number;
+  convAmt: number;
+  viewCnt: number;
+  wAvgRnk: WeightAcc;
+  wPcNxAvgRnk: WeightAcc;
+  wMblNxAvgRnk: WeightAcc;
+  wRecentAvgRnk: WeightAcc;
+  wRecentAvgCpc: WeightAcc;
+};
+
+function emptyEntityStats(): EntityStats {
+  return {
+    impCnt: 0,
+    clkCnt: 0,
+    salesAmt: 0,
+    ccnt: 0,
+    convAmt: 0,
+    viewCnt: 0,
+    wAvgRnk: emptyWeight(),
+    wPcNxAvgRnk: emptyWeight(),
+    wMblNxAvgRnk: emptyWeight(),
+    wRecentAvgRnk: emptyWeight(),
+    wRecentAvgCpc: emptyWeight(),
+  };
+}
+
+function addStatInto(target: EntityStats, stat: unknown) {
+  if (!stat || typeof stat !== "object") return;
+  const record = stat as Record<string, unknown>;
+  const impressions = statNumber(record, "impCnt");
+  const clicks = statNumber(record, "clkCnt");
+  target.impCnt += impressions;
+  target.clkCnt += clicks;
+  target.salesAmt += statNumber(record, "salesAmt");
+  target.ccnt += statNumber(record, "ccnt");
+  target.convAmt += statNumber(record, "convAmt");
+  target.viewCnt += statNumber(record, "viewCnt");
+  addWeighted(target.wAvgRnk, statNumber(record, "avgRnk"), impressions);
+  addWeighted(target.wPcNxAvgRnk, statNumber(record, "pcNxAvgRnk"), impressions);
+  addWeighted(target.wMblNxAvgRnk, statNumber(record, "mblNxAvgRnk"), impressions);
+  addWeighted(target.wRecentAvgRnk, statNumber(record, "recentAvgRnk"), impressions);
+  addWeighted(target.wRecentAvgCpc, statNumber(record, "recentAvgCpc"), clicks);
+}
+
+function mergeEntityStats(target: EntityStats, next: EntityStats) {
+  target.impCnt += next.impCnt;
+  target.clkCnt += next.clkCnt;
+  target.salesAmt += next.salesAmt;
+  target.ccnt += next.ccnt;
+  target.convAmt += next.convAmt;
+  target.viewCnt += next.viewCnt;
+  target.wAvgRnk.weighted += next.wAvgRnk.weighted;
+  target.wAvgRnk.weight += next.wAvgRnk.weight;
+  target.wPcNxAvgRnk.weighted += next.wPcNxAvgRnk.weighted;
+  target.wPcNxAvgRnk.weight += next.wPcNxAvgRnk.weight;
+  target.wMblNxAvgRnk.weighted += next.wMblNxAvgRnk.weighted;
+  target.wMblNxAvgRnk.weight += next.wMblNxAvgRnk.weight;
+  target.wRecentAvgRnk.weighted += next.wRecentAvgRnk.weighted;
+  target.wRecentAvgRnk.weight += next.wRecentAvgRnk.weight;
+  target.wRecentAvgCpc.weighted += next.wRecentAvgCpc.weighted;
+  target.wRecentAvgCpc.weight += next.wRecentAvgCpc.weight;
+}
+
+function snapshotFromEntity(stats: EntityStats): Record<string, number | null> {
+  const rates = deriveRates(stats.impCnt, stats.clkCnt, stats.salesAmt, stats.ccnt, stats.convAmt);
+  return {
+    impCnt: stats.impCnt,
+    clkCnt: stats.clkCnt,
+    salesAmt: stats.salesAmt,
+    ccnt: stats.ccnt,
+    convAmt: stats.convAmt,
+    viewCnt: stats.viewCnt,
+    ...rates,
+    avgRnk: weightAvg(stats.wAvgRnk),
+    pcNxAvgRnk: weightAvg(stats.wPcNxAvgRnk),
+    mblNxAvgRnk: weightAvg(stats.wMblNxAvgRnk),
+    recentAvgRnk: weightAvg(stats.wRecentAvgRnk),
+    recentAvgCpc: weightAvg(stats.wRecentAvgCpc),
+  };
+}
+
+type CampaignRef = {
+  id: string;
+  campaignTp: string;
+  name: string;
+  meta: Record<string, unknown>;
+  stats: EntityStats;
+};
+
+type AdgroupRef = {
+  id: string;
+  campaignId: string;
+  name: string;
+  meta: Record<string, unknown>;
+  stats: EntityStats;
+};
+
+type AdMetrics = EntityStats & {
+  campaignCount: number;
+  campaignTypes: Record<string, number>;
+  campaigns: CampaignRef[];
+  adgroups: AdgroupRef[];
+};
+
+function emptyAdMetrics(): AdMetrics {
+  return {
+    ...emptyEntityStats(),
+    campaignCount: 0,
+    campaignTypes: {},
+    campaigns: [],
+    adgroups: [],
+  };
+}
+
+function addStatNumbers(target: AdMetrics, stat: unknown) {
+  addStatInto(target, stat);
+}
+
+async function listPaged(
+  account: NaverSaAccount,
+  path: string,
+  extraQuery = "",
+  idOf: (item: unknown) => string | null,
+) {
+  const rows: unknown[] = [];
+  let baseSearchId = "";
+
+  for (let page = 0; page < 50; page += 1) {
+    const parts = [extraQuery, baseSearchId ? `baseSearchId=${encodeURIComponent(baseSearchId)}` : ""]
+      .filter(Boolean);
+    const { response, body } = await naverSaGet(account, path, parts.join("&"));
+    if (!response.ok) {
+      return {
+        ok: false as const,
+        status: response.status,
+        message: apiErrorMessage(body, `${path} failed`),
+        rows,
+      };
+    }
+
+    const pageRows = asArray(body);
+    if (pageRows.length === 0) break;
+    rows.push(...pageRows);
+    if (pageRows.length < 100) break;
+    const lastId = idOf(pageRows[pageRows.length - 1]);
+    if (!lastId || lastId === baseSearchId) break;
+    baseSearchId = lastId;
+  }
+
+  return { ok: true as const, rows };
+}
+
+async function listCampaigns(account: NaverSaAccount) {
+  const listed = await listPaged(account, "/ncc/campaigns", "", campaignIdOf);
+  if (!listed.ok) {
+    return {
+      ok: false as const,
+      status: listed.status,
+      message: listed.message,
+      campaigns: [] as CampaignRef[],
+    };
+  }
+
+  const campaigns: CampaignRef[] = [];
+  for (const row of listed.rows) {
+    const id = campaignIdOf(row);
+    if (!id) continue;
+    campaigns.push({
+      id,
+      campaignTp: campaignTpOf(row),
+      name: campaignNameOf(row),
+      meta: pickMeta(row, CAMPAIGN_META_KEYS),
+      stats: emptyEntityStats(),
+    });
+  }
+  return { ok: true as const, campaigns };
+}
+
+function adgroupIdOf(item: unknown): string | null {
+  if (!item || typeof item !== "object") return null;
+  const record = item as Record<string, unknown>;
+  return idText(record.nccAdgroupId ?? record.adgroupId ?? record.id);
+}
+
+async function listAdgroups(account: NaverSaAccount) {
+  const listed = await listPaged(account, "/ncc/adgroups", "", adgroupIdOf);
+  if (!listed.ok) return { ok: false as const, adgroups: [] as AdgroupRef[], message: listed.message };
+  const adgroups: AdgroupRef[] = [];
+  for (const row of listed.rows) {
+    const id = adgroupIdOf(row);
+    if (!id) continue;
+    const record = row as Record<string, unknown>;
+    adgroups.push({
+      id,
+      campaignId: idText(record.nccCampaignId ?? record.campaignId) ?? "",
+      name: campaignNameOf(row),
+      meta: pickMeta(row, ADGROUP_META_KEYS),
+      stats: emptyEntityStats(),
+    });
+  }
+  return { ok: true as const, adgroups };
+}
+
 function linkedCustomerIdOf(item: unknown): string | null {
   if (!item || typeof item !== "object") return null;
   const record = item as Record<string, unknown>;
@@ -287,51 +593,6 @@ function linkedCustomerIdOf(item: unknown): string | null {
   );
 }
 
-function addStatNumbers(target: { adSpend: number; impressions: number; clicks: number; conversions: number; convAmt: number }, stat: unknown) {
-  if (!stat || typeof stat !== "object") return;
-  const record = stat as Record<string, unknown>;
-  const num = (key: string) => {
-    const value = Number(record[key] ?? 0);
-    return Number.isFinite(value) ? value : 0;
-  };
-  target.adSpend += num("salesAmt");
-  target.impressions += num("impCnt");
-  target.clicks += num("clkCnt");
-  target.conversions += num("ccnt");
-  target.convAmt += num("convAmt");
-}
-
-async function listCampaignIds(account: NaverSaAccount) {
-  const campaigns: string[] = [];
-  let baseSearchId = "";
-
-  for (let page = 0; page < 20; page += 1) {
-    const query = baseSearchId ? `baseSearchId=${encodeURIComponent(baseSearchId)}` : "";
-    const { response, body } = await naverSaGet(account, "/ncc/campaigns", query);
-    if (!response.ok) {
-      return {
-        ok: false as const,
-        status: response.status,
-        message: apiErrorMessage(body, "naver sa campaigns failed"),
-        campaigns,
-      };
-    }
-
-    const rows = asArray(body);
-    if (rows.length === 0) break;
-    for (const row of rows) {
-      const id = campaignIdOf(row);
-      if (id) campaigns.push(id);
-    }
-    if (rows.length < 100) break;
-    const lastId = campaignIdOf(rows[rows.length - 1]);
-    if (!lastId || lastId === baseSearchId) break;
-    baseSearchId = lastId;
-  }
-
-  return { ok: true as const, campaigns };
-}
-
 async function listLinkedCustomerIds(account: NaverSaAccount) {
   const { response, body } = await naverSaGet(account, "/customer-links", "type=MYCLIENTS");
   if (!response.ok) return [] as string[];
@@ -339,9 +600,88 @@ async function listLinkedCustomerIds(account: NaverSaAccount) {
   return [...new Set(ids)].filter((id) => id !== account.customerId);
 }
 
-async function fetchNaverSaDay(account: NaverSaAccount, date: string) {
+function statItemsOf(item: unknown): unknown[] {
+  if (!item || typeof item !== "object") return [];
+  const record = item as Record<string, unknown>;
+  if (Array.isArray(record.data)) return record.data;
+  if (record.stats && typeof record.stats === "object") return [record.stats];
+  return [record];
+}
+
+function applyCampaignStats(
+  body: unknown,
+  campaignsById: Map<string, CampaignRef>,
+  productOf: Map<string, "sa" | "da">,
+  sa: AdMetrics,
+  da: AdMetrics,
+) {
+  for (const item of asArray(body)) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as Record<string, unknown>;
+    const id = idText(record.id ?? record.nccCampaignId ?? record.campaignId);
+    const campaign = id ? campaignsById.get(id) : undefined;
+    const bucket = (id ? productOf.get(id) : undefined) ?? "sa";
+    const target = bucket === "da" ? da : sa;
+    for (const stat of statItemsOf(item)) {
+      addStatNumbers(target, stat);
+      if (campaign) addStatInto(campaign.stats, stat);
+    }
+  }
+}
+
+function applyAdgroupStats(
+  body: unknown,
+  adgroupsById: Map<string, AdgroupRef>,
+  productOf: Map<string, "sa" | "da">,
+) {
+  for (const item of asArray(body)) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as Record<string, unknown>;
+    const id = idText(record.id ?? record.nccAdgroupId ?? record.adgroupId);
+    const adgroup = id ? adgroupsById.get(id) : undefined;
+    if (!adgroup) continue;
+    const bucket = productOf.get(adgroup.campaignId) ?? "sa";
+    if (bucket !== "sa" && bucket !== "da") continue;
+    for (const stat of statItemsOf(item)) addStatInto(adgroup.stats, stat);
+  }
+}
+
+async function fetchStats(
+  account: NaverSaAccount,
+  ids: string,
+  date: string,
+  idType?: string,
+) {
+  const timeRange = JSON.stringify({ since: date, until: date });
+  const idTypeQuery = idType ? `&idType=${encodeURIComponent(idType)}` : "";
+  const attempts = [NAVER_STAT_FIELDS, NAVER_STAT_FIELDS_FALLBACK];
+
+  let lastStatus = 0;
+  let lastBody: unknown = null;
+  for (const fieldList of attempts) {
+    const fields = JSON.stringify(fieldList);
+    const query =
+      `ids=${encodeURIComponent(ids)}` +
+      `&fields=${encodeURIComponent(fields)}` +
+      `&timeRange=${encodeURIComponent(timeRange)}` +
+      idTypeQuery;
+    const { response, body } = await naverSaGet(account, "/stats", query);
+    if (response.ok) return { ok: true as const, body };
+    lastStatus = response.status;
+    lastBody = body;
+    if (response.status !== 400) break;
+  }
+
+  return {
+    ok: false as const,
+    status: lastStatus,
+    message: apiErrorMessage(lastBody, "naver sa stats failed"),
+  };
+}
+
+async function fetchNaverAdsDay(account: NaverSaAccount, date: string) {
   const targets: NaverSaAccount[] = [account];
-  const first = await listCampaignIds(account);
+  const first = await listCampaigns(account);
   if (!first.ok) {
     return {
       ok: false as const,
@@ -358,53 +698,65 @@ async function fetchNaverSaDay(account: NaverSaAccount, date: string) {
     }
   }
 
-  const totals = { adSpend: 0, impressions: 0, clicks: 0, conversions: 0, convAmt: 0 };
+  const sa = emptyAdMetrics();
+  const da = emptyAdMetrics();
   const chunkSize = 20;
-  const fields = '["impCnt","clkCnt","salesAmt","ccnt","convAmt"]';
-  const timeRange = JSON.stringify({ since: date, until: date });
-  let campaignCount = 0;
 
   for (const target of targets) {
     const listed = target === account && first.campaigns.length > 0
       ? first
-      : await listCampaignIds(target);
+      : await listCampaigns(target);
     if (!listed.ok) continue;
-    campaignCount += listed.campaigns.length;
+
+    const productOf = new Map<string, "sa" | "da">();
+    const campaignsById = new Map<string, CampaignRef>();
+    for (const campaign of listed.campaigns) {
+      const product = campaignProduct(campaign.campaignTp);
+      productOf.set(campaign.id, product);
+      campaignsById.set(campaign.id, campaign);
+      const bucket = product === "da" ? da : sa;
+      bucket.campaignCount += 1;
+      bucket.campaignTypes[campaign.campaignTp] = (bucket.campaignTypes[campaign.campaignTp] ?? 0) + 1;
+      bucket.campaigns.push(campaign);
+    }
 
     for (let i = 0; i < listed.campaigns.length; i += chunkSize) {
-      const ids = listed.campaigns.slice(i, i + chunkSize).join(",");
-      const query =
-        `ids=${encodeURIComponent(ids)}` +
-        `&fields=${encodeURIComponent(fields)}` +
-        `&timeRange=${encodeURIComponent(timeRange)}`;
-      const { response, body } = await naverSaGet(target, "/stats", query);
-      if (!response.ok) {
+      const ids = listed.campaigns.slice(i, i + chunkSize).map((item) => item.id).join(",");
+      const stats = await fetchStats(target, ids, date);
+      if (!stats.ok) {
         return {
           ok: false as const,
           reason: "http-error",
-          status: response.status,
-          message: apiErrorMessage(body, "naver sa stats failed"),
+          status: stats.status,
+          message: stats.message,
         };
       }
+      applyCampaignStats(stats.body, campaignsById, productOf, sa, da);
+    }
 
-      for (const item of asArray(body)) {
-        if (!item || typeof item !== "object") continue;
-        const record = item as Record<string, unknown>;
-        if (Array.isArray(record.data)) {
-          for (const stat of record.data) addStatNumbers(totals, stat);
-        } else if (record.stats && typeof record.stats === "object") {
-          addStatNumbers(totals, record.stats);
-        } else {
-          addStatNumbers(totals, record);
-        }
+    const grouped = await listAdgroups(target);
+    if (grouped.ok) {
+      const adgroupsById = new Map<string, AdgroupRef>();
+      for (const adgroup of grouped.adgroups) {
+        const product = productOf.get(adgroup.campaignId);
+        if (!product) continue;
+        adgroupsById.set(adgroup.id, adgroup);
+        (product === "da" ? da : sa).adgroups.push(adgroup);
+      }
+      const ids = [...adgroupsById.keys()];
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize).join(",");
+        const stats = await fetchStats(target, chunk, date, "nccAdgroupId");
+        if (!stats.ok) break;
+        applyAdgroupStats(stats.body, adgroupsById, productOf);
       }
     }
   }
 
   return {
     ok: true as const,
-    ...totals,
-    campaignCount,
+    sa,
+    da,
   };
 }
 
@@ -413,6 +765,225 @@ function json(data: unknown, status = 200) {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8" },
   });
+}
+
+type AdInsert = {
+  company_id: string;
+  snapshot_date: string;
+  snapshot_hour: number;
+  period: "daily";
+  platform: "naver" | "coupang" | "google";
+  product: "sa" | "da";
+  source: string;
+  ad_spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  conv_amt: number;
+  extra: Record<string, unknown>;
+};
+
+function serializeCampaign(campaign: CampaignRef) {
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    campaignTp: campaign.campaignTp,
+    ...campaign.meta,
+    ...snapshotFromEntity(campaign.stats),
+  };
+}
+
+function serializeAdgroup(adgroup: AdgroupRef) {
+  return {
+    id: adgroup.id,
+    campaignId: adgroup.campaignId,
+    name: adgroup.name,
+    ...adgroup.meta,
+    ...snapshotFromEntity(adgroup.stats),
+  };
+}
+
+function mergeAdMetrics(target: AdMetrics, next: AdMetrics) {
+  mergeEntityStats(target, next);
+  target.campaignCount += next.campaignCount;
+  target.campaigns.push(...next.campaigns);
+  target.adgroups.push(...next.adgroups);
+  for (const [key, value] of Object.entries(next.campaignTypes)) {
+    target.campaignTypes[key] = (target.campaignTypes[key] ?? 0) + value;
+  }
+}
+
+function adRow(date: string, product: "sa" | "da", metrics: AdMetrics): AdInsert {
+  const stats = snapshotFromEntity(metrics);
+  return {
+    company_id: COMPANY_ID,
+    snapshot_date: date,
+    snapshot_hour: snapshotHourForDate(date),
+    period: "daily",
+    platform: "naver",
+    product,
+    source: "naver_searchad",
+    ad_spend: metrics.salesAmt,
+    impressions: metrics.impCnt,
+    clicks: metrics.clkCnt,
+    conversions: metrics.ccnt,
+    conv_amt: metrics.convAmt,
+    extra: {
+      campaign_count: metrics.campaignCount,
+      campaign_types: metrics.campaignTypes,
+      adgroup_count: metrics.adgroups.length,
+      stats,
+      campaigns: metrics.campaigns
+        .map(serializeCampaign)
+        .sort((left, right) => Number(right.salesAmt ?? 0) - Number(left.salesAmt ?? 0)),
+      adgroups: metrics.adgroups
+        .map(serializeAdgroup)
+        .sort((left, right) => Number(right.salesAmt ?? 0) - Number(left.salesAmt ?? 0)),
+    },
+  };
+}
+
+function adToChannelCompat(row: AdInsert): SnapshotInsert {
+  return {
+    company_id: row.company_id,
+    snapshot_date: row.snapshot_date,
+    period: "daily",
+    channel_id: `${row.platform}_${row.product}`,
+    kind: "commerce",
+    source: row.source,
+    sales: null,
+    orders: null,
+    conversion_rate: null,
+    ad_spend: row.ad_spend,
+    followers: null,
+    reach: null,
+    engagement_rate: null,
+    extra: {
+      platform: row.platform,
+      product: row.product,
+      impressions: row.impressions,
+      clicks: row.clicks,
+      conversions: row.conversions,
+      conv_amt: row.conv_amt,
+      stats: row.extra.stats,
+      campaign_count: row.extra.campaign_count,
+      campaign_types: row.extra.campaign_types,
+    },
+  };
+}
+
+async function collectNaverAds(date: string): Promise<{ rows: AdInsert[]; notes: string[] }> {
+  const notes: string[] = [];
+  const accounts = readNaverSaAccounts();
+  if (accounts.length === 0) {
+    notes.push("네이버 검색광고 시크릿이 없습니다. 광고 행을 쓰지 않았습니다.");
+    return { rows: [], notes };
+  }
+
+  const sa = emptyAdMetrics();
+  const da = emptyAdMetrics();
+  let live = false;
+
+  for (const account of accounts) {
+    try {
+      const naver = await fetchNaverAdsDay(account, date);
+      if (naver.ok) {
+        live = true;
+        mergeAdMetrics(sa, naver.sa);
+        mergeAdMetrics(da, naver.da);
+        notes.push(
+          `naver (${account.label}) SA: ad_spend=${naver.sa.salesAmt}, campaigns=${naver.sa.campaignCount}, adgroups=${naver.sa.adgroups.length}; DA: ad_spend=${naver.da.salesAmt}, campaigns=${naver.da.campaignCount}, adgroups=${naver.da.adgroups.length}`,
+        );
+        if (naver.sa.campaignCount + naver.da.campaignCount === 0) {
+          notes.push(
+            "네이버 캠페인이 0개입니다. NAVER_SA_CUSTOMER_ID가 검색광고 광고주 ID인지 확인하세요.",
+          );
+        }
+      } else {
+        notes.push(
+          `naver (${account.label}) 호출 실패(${naver.status ?? naver.reason}): ${naver.message}`,
+        );
+      }
+    } catch (error) {
+      notes.push(
+        `naver (${account.label}) 예외: ${error instanceof Error ? error.message : "unknown"}`,
+      );
+    }
+  }
+
+  if (!live) return { rows: [], notes };
+  return { notes, rows: [adRow(date, "sa", sa), adRow(date, "da", da)] };
+}
+
+async function collectCoupang(date: string): Promise<{ rows: SnapshotInsert[]; notes: string[] }> {
+  const notes: string[] = [];
+  const rows: SnapshotInsert[] = [];
+  const accounts = readCoupangAccounts();
+  if (accounts.length === 0) {
+    notes.push("켜 둔 쿠팡 채널에 계정 시크릿이 없습니다.");
+    return { rows, notes };
+  }
+
+  for (const account of accounts) {
+    try {
+      const coupang = await fetchCoupangDay(account, date);
+      if (coupang.ok) {
+        rows.push({
+          company_id: COMPANY_ID,
+          snapshot_date: date,
+          period: "daily",
+          channel_id: account.channelId,
+          kind: "commerce",
+          source: "coupang",
+          sales: coupang.sales,
+          orders: coupang.orders,
+          conversion_rate: null,
+          ad_spend: null,
+          followers: null,
+          reach: null,
+          engagement_rate: null,
+          extra: {
+            label: account.label,
+            vendor_id: account.vendorId,
+          },
+        });
+        notes.push(
+          `${account.channelId} (${account.label}) live: sales=${coupang.sales}, orders=${coupang.orders}`,
+        );
+      } else {
+        notes.push(
+          `${account.channelId} 호출 실패(${coupang.status ?? coupang.reason}): ${coupang.message}`,
+        );
+      }
+    } catch (error) {
+      notes.push(
+        `${account.channelId} 예외: ${error instanceof Error ? error.message : "unknown"}`,
+      );
+    }
+  }
+
+  return { rows, notes };
+}
+
+async function collectEnabled(date: string) {
+  const notes: string[] = [];
+  const rows: AdInsert[] = [];
+  const skipped = Object.entries(AD_COLLECTORS)
+    .filter(([, meta]) => !meta.enabled)
+    .map(([id]) => id);
+
+  if (isAdCollectorEnabled("naver")) {
+    const naver = await collectNaverAds(date);
+    notes.push(...naver.notes);
+    rows.push(...naver.rows);
+  }
+
+  if (skipped.length > 0) {
+    notes.push(`광고 수집 안 함(대기): ${skipped.join(", ")}`);
+  }
+
+  notes.push("판매 채널은 사방넷 연동 후 channel_snapshots 에 저장합니다.");
+  return { notes, rows };
 }
 
 Deno.serve(async (request) => {
@@ -431,7 +1002,7 @@ Deno.serve(async (request) => {
   }
 
   const url = new URL(request.url);
-  const date = url.searchParams.get("date") ?? kstDate(0);
+  const dates = collectDates(url.searchParams.get("date"));
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) {
@@ -439,119 +1010,45 @@ Deno.serve(async (request) => {
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
-  const rows = CHANNELS.map((channel) => mockRow(channel, date));
   const notes: string[] = [];
-  const accounts = readCoupangAccounts();
+  const rows: AdInsert[] = [];
 
-  if (accounts.length === 0) {
-    notes.push("쿠팡 계정 시크릿이 없습니다. coupang_1 / coupang_2 모두 mock으로 저장했습니다.");
+  for (const date of dates) {
+    const collected = await collectEnabled(date);
+    notes.push(`--- ${date} ---`, ...collected.notes);
+    rows.push(...collected.rows);
   }
 
-  for (const account of accounts) {
-    try {
-      const coupang = await fetchCoupangDay(account, date);
-      if (coupang.ok) {
-        const index = rows.findIndex((row) => row.channel_id === account.channelId);
-        if (index >= 0) {
-          rows[index] = {
-            ...rows[index],
-            source: "coupang",
-            sales: coupang.sales,
-            orders: coupang.orders,
-            extra: {
-              label: account.label,
-              vendor_id: account.vendorId,
-            },
-          };
-        }
-        notes.push(
-          `${account.channelId} (${account.label}) live: sales=${coupang.sales}, orders=${coupang.orders}`,
-        );
-      } else {
-        notes.push(
-          `${account.channelId} 호출 실패(${coupang.status ?? coupang.reason}): ${coupang.message}. mock 값으로 저장했습니다.`,
-        );
-      }
-    } catch (error) {
-      notes.push(
-        `${account.channelId} 예외: ${error instanceof Error ? error.message : "unknown"}`,
-      );
-    }
+  if (rows.length === 0) {
+    return json({
+      ok: true,
+      snapshot_date: dates.at(-1),
+      snapshot_dates: dates,
+      rows: 0,
+      sources: {},
+      notes: [...notes, "실측 광고 행이 없어 DB에 쓰지 않았습니다."],
+    });
   }
 
-  const naverAccounts = readNaverSaAccounts();
-  if (naverAccounts.length === 0) {
-    notes.push("네이버 SA 시크릿이 없습니다. naver 광고비는 mock으로 저장했습니다.");
-  } else {
-    let adSpend = 0;
-    let impressions = 0;
-    let clicks = 0;
-    let conversions = 0;
-    let convAmt = 0;
-    let live = false;
-
-    for (const account of naverAccounts) {
-      try {
-        const naver = await fetchNaverSaDay(account, date);
-        if (naver.ok) {
-          live = true;
-          adSpend += naver.adSpend;
-          impressions += naver.impressions;
-          clicks += naver.clicks;
-          conversions += naver.conversions;
-          convAmt += naver.convAmt;
-          notes.push(
-            `naver SA (${account.label}) live: ad_spend=${naver.adSpend}, campaigns=${naver.campaignCount}`,
-          );
-          if (naver.campaignCount === 0) {
-            notes.push(
-              "네이버 캠페인이 0개입니다. Secrets의 NAVER_SA_CUSTOMER_ID가 검색광고 광고주 ID(숫자)인지, 그 계정에 캠페인이 있는지 확인하세요. 검색광고 → 도구/내정보에서 계정 ID를 볼 수 있습니다.",
-            );
-          }
-        } else {
-          notes.push(
-            `naver SA (${account.label}) 호출 실패(${naver.status ?? naver.reason}): ${naver.message}. mock 광고비를 유지합니다.`,
-          );
-        }
-      } catch (error) {
-        notes.push(
-          `naver SA (${account.label}) 예외: ${error instanceof Error ? error.message : "unknown"}`,
-        );
-      }
-    }
-
-    if (live) {
-      const index = rows.findIndex((row) => row.channel_id === "naver");
-      if (index >= 0) {
-        rows[index] = {
-          ...rows[index],
-          source: "naver_sa",
-          ad_spend: adSpend,
-          extra: {
-            ...((rows[index].extra as Record<string, unknown> | undefined) ?? {}),
-            naver_sa: {
-              ad_spend: adSpend,
-              impressions,
-              clicks,
-              conversions,
-              conv_amt: convAmt,
-            },
-          },
-        };
-      }
-    }
+  const adWrite = await supabase.from("ad_snapshots").upsert(rows, {
+    onConflict: "company_id,platform,product,snapshot_date,snapshot_hour,period",
+  });
+  if (adWrite.error) {
+    notes.push(`ad_snapshots 저장 실패: ${adWrite.error.message}. 003_ad_snapshots.sql 을 실행했는지 확인하세요.`);
   }
 
-  const { error } = await supabase.from("channel_snapshots").upsert(rows, {
+  const compat = rows.map(adToChannelCompat);
+  const channelWrite = await supabase.from("channel_snapshots").upsert(compat, {
     onConflict: "company_id,channel_id,snapshot_date,period",
   });
-
-  if (error) return json({ error: error.message }, 500);
+  if (channelWrite.error) return json({ error: channelWrite.error.message, notes }, 500);
 
   return json({
     ok: true,
-    snapshot_date: date,
+    snapshot_date: dates.at(-1),
+    snapshot_dates: dates,
     rows: rows.length,
+    sources: Object.fromEntries(rows.map((row) => [`${row.platform}_${row.product}`, row.source])),
     notes,
   });
 });

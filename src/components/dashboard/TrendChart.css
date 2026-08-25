@@ -5,7 +5,6 @@
   padding: 20px 22px;
   border-radius: 24px;
   background: #fff;
-  box-shadow: var(--panel-shadow);
   outline: var(--panel-ring);
 }
 
@@ -16,6 +15,10 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.trend__head .snapshot-lookup {
+  margin-left: auto;
 }
 
 .trend__tabs {
@@ -73,7 +76,7 @@
 }
 
 .trend__chart {
-  height: 210px;
+  height: 228px;
   transition: opacity 0.18s ease;
 }
 

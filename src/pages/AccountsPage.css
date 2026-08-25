@@ -5,6 +5,40 @@
   padding-bottom: 32px;
 }
 
+.accounts.is-enter > * {
+  animation: page-reveal 0.56s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.accounts.is-enter > *:nth-child(1) {
+  --reveal-x: 0px;
+  --reveal-y: 28px;
+  animation-delay: 30ms;
+}
+
+.accounts.is-enter > *:nth-child(2) {
+  --reveal-x: 36px;
+  --reveal-y: 0px;
+  animation-delay: 90ms;
+}
+
+.accounts.is-enter > *:nth-child(3) {
+  --reveal-x: -36px;
+  --reveal-y: 0px;
+  animation-delay: 90ms;
+}
+
+.accounts.is-enter > *:nth-child(4) {
+  --reveal-x: 0px;
+  --reveal-y: -28px;
+  animation-delay: 150ms;
+}
+
+.accounts.is-enter > *:nth-child(5) {
+  --reveal-x: 0px;
+  --reveal-y: -20px;
+  animation-delay: 190ms;
+}
+
 .accounts__head h2 {
   margin: 0;
   font-size: 22px;
@@ -40,10 +74,16 @@
   font-size: 12px;
 }
 
+.accounts__form-note {
+  min-width: 240px;
+  flex: 1.4;
+}
+
 .accounts__form input,
 .accounts__form select,
 .accounts__form button,
-.accounts__table select {
+.accounts__table select,
+.accounts__cell-input {
   height: 40px;
   padding: 0 12px;
   border: 0;
@@ -105,4 +145,58 @@
 .accounts__table td span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.accounts__cell-input {
+  width: 140px;
+}
+
+.accounts__cell-note {
+  width: min(280px, 28vw);
+  min-width: 160px;
+}
+
+.accounts__login-id {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.accounts__reset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accounts__reset-btn {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.accounts__reset-btn:disabled {
+  cursor: not-allowed;
+  background: #f3f4f6;
+  color: #94a3b8;
+}
+
+.accounts__delete {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.accounts__delete:disabled {
+  cursor: not-allowed;
+  background: #f3f4f6;
+  color: #94a3b8;
 }

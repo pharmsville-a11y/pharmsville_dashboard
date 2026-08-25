@@ -1,3 +1,5 @@
+import { kstDateFromYmd } from './kst'
+
 export function formatWon(value: number): string {
   return new Intl.NumberFormat('ko-KR', {
     style: 'currency',
@@ -25,42 +27,108 @@ export function formatCompact(value: number): string {
   return formatNumber(value)
 }
 
+export function formatPercent(value: number): string {
+  return `${value.toFixed(2)}%`
+}
+
+export function formatRank(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value) || value <= 0) return '—'
+  return value.toFixed(2)
+}
+
 export function formatRate(value: number): string {
   return `${(value * 100).toFixed(1)}%`
 }
 
-export function formatAxisTime(iso: string, rangeKey: string): string {
+export function formatAxisDateTime(iso: string): { date: string; time: string } {
   const date = new Date(iso)
-  if (rangeKey === '1D') {
-    return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit' }).format(date)
+  if (Number.isNaN(date.getTime())) return { date: '', time: '' }
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Seoul',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date)
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ''
+  return {
+    date: `${get('month')}/${get('day')}`,
+    time: `${get('hour')}:${get('minute')}`,
   }
-  if (rangeKey === '5D' || rangeKey === '1M') {
-    return new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' }).format(date)
-  }
-  return new Intl.DateTimeFormat('ko-KR', { month: 'short' }).format(date)
+}
+
+export function formatAxisTime(iso: string, _rangeKey?: string): string {
+  const { date, time } = formatAxisDateTime(iso)
+  if (!date) return ''
+  return `${date} ${time}`
 }
 
 export function formatTooltipTime(iso: string): string {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'short',
+  const { date, time } = formatAxisDateTime(iso)
+  if (!date) return ''
+  return `${date} ${time}`
+}
+
+export function formatHoursLabel(hours: number[] | null | undefined): string {
+  if (!hours?.length) return '전체 시간'
+  const sorted = [...new Set(hours)].sort((left, right) => left - right)
+  if (sorted.length === 1) return `${sorted[0]}시`
+  const consecutive = sorted.every((hour, index) => index === 0 || hour === sorted[index - 1]! + 1)
+  if (consecutive) return `${sorted[0]}–${sorted[sorted.length - 1]}시`
+  if (sorted.length <= 4) return sorted.map((hour) => `${hour}시`).join(', ')
+  return `${sorted.length}개 시각`
+}
+
+export function hoursFromSpan(fromHour: number, toHour: number): number[] {
+  const start = Math.max(0, Math.min(23, Math.min(fromHour, toHour)))
+  const end = Math.max(0, Math.min(23, Math.max(fromHour, toHour)))
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index)
+}
+
+export function isHourSpan(hours: number[]): boolean {
+  if (hours.length < 2) return false
+  const sorted = [...hours].sort((left, right) => left - right)
+  return sorted.every((hour, index) => index === 0 || hour === sorted[index - 1]! + 1)
+}
+
+export function formatLookupPeriod(from: string, to: string): string {
+  const start = kstDateFromYmd(from)
+  const end = kstDateFromYmd(to)
+  if (from === to) {
+    return new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'short',
+    }).format(end)
+  }
+  const sameYear = from.slice(0, 4) === to.slice(0, 4)
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Seoul',
+    ...(sameYear ? {} : { year: 'numeric' }),
+    month: 'numeric',
     day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(iso))
+  }
+  const startLabel = new Intl.DateTimeFormat('ko-KR', options).format(start)
+  const endLabel = new Intl.DateTimeFormat('ko-KR', options).format(end)
+  return `${startLabel} – ${endLabel}`
 }
 
 export function formatPeriodRange(from: Date, to: Date, period: 'daily' | 'weekly' | 'monthly'): string {
+  const start = Number.isNaN(from.getTime()) ? new Date() : from
+  const end = Number.isNaN(to.getTime()) ? new Date() : to
   if (period === 'daily') {
     return new Intl.DateTimeFormat('ko-KR', {
       month: 'long',
       day: 'numeric',
       weekday: 'short',
-    }).format(to)
+    }).format(end)
   }
   if (period === 'weekly') {
-    const start = new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' }).format(from)
-    const end = new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' }).format(to)
-    return `${start} – ${end}`
+    const startLabel = new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' }).format(start)
+    const endLabel = new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' }).format(end)
+    return `${startLabel} – ${endLabel}`
   }
-  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long' }).format(to)
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long' }).format(end)
 }

@@ -1,0 +1,11 @@
+---
+description: Dashboard line charts use the lookup modal and date-time X-axis
+globs: src/components/dashboard/**/*.{tsx,css}
+alwaysApply: false
+---
+
+Trend-style line charts (TrendChart, AnalyticsChart, and future copies) must:
+
+- Put period/hour selection in `SnapshotLookup`, not `1D/7D/1M` chip rows
+- Use `AxisDateTimeTick` for X-axis labels: `MM/DD` on the first line, 24-hour `HH:mm` on the second
+- Share the same lookup state from `useDashboard` (`selectedFrom`, `selectedTo`, `selectedHours`)

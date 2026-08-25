@@ -72,7 +72,7 @@
 }
 
 .sidebar__thought {
-  margin-top: 16px;
+  margin-top: 12px;
   padding: 18px 16px;
   border-radius: 22px;
   background: linear-gradient(180deg, #e7f8ea 0%, #d8f3e0 100%);
@@ -109,4 +109,117 @@
 .sidebar__logout:hover {
   background: rgba(255, 255, 255, 0.72);
   color: var(--ink);
+}
+
+.sidebar__clock {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(165deg, #ffffff 0%, #f6f3ff 58%, #ece7ff 100%);
+  box-shadow: 0 8px 18px rgba(108, 92, 231, 0.1);
+  outline: 1px solid rgba(108, 92, 231, 0.08);
+}
+
+.sidebar__clock::before {
+  content: '';
+  position: absolute;
+  top: -28px;
+  right: -16px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(108, 92, 231, 0.2), transparent 68%);
+  pointer-events: none;
+}
+
+.sidebar__clock-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar__clock-icon {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--brand);
+  box-shadow: 0 4px 10px rgba(108, 92, 231, 0.12);
+}
+
+.sidebar__clock-weekday {
+  min-width: 0;
+  flex: 1;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sidebar__clock-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--brand);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.sidebar__clock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
+  animation: clock-live 1.6s ease-in-out infinite;
+}
+
+.sidebar__clock-time {
+  position: relative;
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+}
+
+.sidebar__clock-date {
+  position: relative;
+  color: #7b8094;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+@keyframes clock-live {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar__clock-dot {
+    animation: none;
+  }
 }

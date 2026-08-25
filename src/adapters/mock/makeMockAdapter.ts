@@ -5,6 +5,7 @@ import type {
   TimePoint,
 } from '../types'
 import { hashString, pointCount, withLatency } from '../utils'
+import { kstDateFromYmd, kstDaysBetween, kstIsoAt, kstYmd } from '../../lib/kst'
 import type { MockChannelSeed } from './seeds'
 
 function seriesFor(seed: MockChannelSeed, range: DateRange): number[] {
@@ -28,12 +29,19 @@ function seriesFor(seed: MockChannelSeed, range: DateRange): number[] {
 }
 
 function timestamps(range: DateRange, count: number): string[] {
-  const start = range.from.getTime()
-  const end = range.to.getTime()
-  const step = count <= 1 ? 0 : (end - start) / (count - 1)
-  return Array.from({ length: count }, (_, index) =>
-    new Date(start + step * index).toISOString(),
-  )
+  const from = kstYmd(range.from)
+  const to = kstYmd(range.to)
+  if (from === to) {
+    const total = Math.max(1, count)
+    return Array.from({ length: total }, (_, index) =>
+      kstIsoAt(from, total === 1 ? 12 : Math.round((index / (total - 1)) * 23)),
+    )
+  }
+  const span = Math.max(0, kstDaysBetween(from, to))
+  return Array.from({ length: count }, (_, index) => {
+    const offset = count <= 1 ? 0 : Math.round((index / (count - 1)) * span)
+    return kstIsoAt(kstYmd(kstDateFromYmd(from), offset), 12)
+  })
 }
 
 function formatTradeDate(date: Date): string {

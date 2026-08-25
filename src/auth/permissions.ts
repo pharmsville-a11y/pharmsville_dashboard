@@ -47,7 +47,6 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     'screen.dashboard',
     'screen.channels',
     'screen.commerce',
-    'screen.marketing',
     'screen.reports',
     'screen.tutorial',
   ]),
