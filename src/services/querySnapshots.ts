@@ -15,7 +15,7 @@ export interface AdSnapshotRow {
 }
 
 export function isQueryConfigured(): boolean {
-  return Boolean(import.meta.env.VITE_QUERY_URL && import.meta.env.VITE_QUERY_SECRET)
+  return Boolean(envValue(import.meta.env.VITE_QUERY_URL))
 }
 
 function envValue(value: string | undefined): string {
@@ -95,7 +95,7 @@ export function normalizeAdRow(raw: Record<string, unknown>): AdSnapshotRow | nu
 export async function fetchAds(from: string, to: string): Promise<AdSnapshotRow[]> {
   const base = envValue(import.meta.env.VITE_QUERY_URL)
   const secret = envValue(import.meta.env.VITE_QUERY_SECRET)
-  if (!base || !secret) {
+  if (!base) {
     throw new Error('조회 URL이 설정되지 않았습니다.')
   }
 
@@ -108,12 +108,15 @@ export async function fetchAds(from: string, to: string): Promise<AdSnapshotRow[
     url.searchParams.set('platforms', 'naver,coupang,google')
   }
 
+  const headers: Record<string, string> = {}
+  if (secret) {
+    headers['x-query-secret'] = secret
+    headers['x-collect-secret'] = secret
+  }
+
   const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      'x-query-secret': secret,
-      'x-collect-secret': secret,
-    },
+    headers,
   })
   const body = (await response.json().catch(() => null)) as
     | { ok?: boolean; rows?: Record<string, unknown>[]; error?: string }

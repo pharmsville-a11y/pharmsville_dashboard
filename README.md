@@ -21,7 +21,7 @@ npm run dev
 
 ## GitHub Pages (임시 배포)
 
-개인 계정이 아니라 **회사 GitHub 조직**에 올린 뒤 Pages로 엽니다. 프론트는 mock 화면이라 API 키는 올라가지 않습니다. `.env.local`은 커밋하지 마세요.
+개인 계정이 아니라 **회사 GitHub 조직**에 올린 뒤 Pages로 엽니다. 수집 시크릿(`COLLECT_SECRET`)은 프론트에 넣지 않습니다. 마케팅 광고비는 빌드 때 조회 URL만 넣고 `query-ads` GET으로 읽습니다. `.env.local`은 커밋하지 마세요.
 
 ### 1. 회사 계정으로 로그인
 

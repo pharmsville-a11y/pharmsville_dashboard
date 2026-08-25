@@ -8,7 +8,7 @@ import { formatPeriodRange } from '../lib/format'
 import { kstIsoAt, kstYmd, parseYmd } from '../lib/kst'
 import { buildAdBreakdown, latestAdSnapshotDate, sumAdSpend } from './adSpend'
 import { buildLiveSnapshot } from './liveDashboard'
-import { fetchAds, fetchAdsOrEmpty, isQueryConfigured } from './querySnapshots'
+import { fetchAdsOrEmpty } from './querySnapshots'
 import type { AdsLookup, DashboardSnapshot, PeriodTotals, PeriodTotalsMap } from './types'
 
 export type { AdsLookup, DashboardSnapshot, DashboardTotals, PeriodTotals, PeriodTotalsMap } from './types'
@@ -269,7 +269,7 @@ export async function getAdsDashboardSnapshot(
   const range = adsRangeFromLookup(start, end)
   range.key = rangeKey
   const from = [kstYmd(new Date(), -90), start, kstYmd(range.from)].sort()[0] ?? start
-  const rows = isQueryConfigured() ? await fetchAds(from, kstYmd()) : []
+  const rows = await fetchAdsOrEmpty(from, kstYmd())
   return presentSnapshot(
     buildLiveSnapshot(rows, range, { from: start, to: end, hours: lookup?.hours ?? null }),
     viewer,

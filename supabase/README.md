@@ -91,11 +91,10 @@ Function이 성공한 뒤 `supabase/cron.sql` 을 참고해 Cron을 켭니다. `
 npx supabase functions deploy query-snapshots --no-verify-jwt
 ```
 
-로컬 `.env.local`에 조회 주소를 넣습니다. 시크릿은 `COLLECT_SECRET`과 같아도 됩니다. 이 값은 브라우저 번들에 들어가므로 **GitHub Pages에는 넣지 마세요.**
+로컬 `.env.local`에 조회 주소를 넣습니다. GitHub Pages 빌드는 조회 URL만 넣고, **COLLECT_SECRET은 프론트에 넣지 않습니다.** `query-ads` GET은 대시보드가 광고비를 읽도록 열려 있습니다.
 
 ```
-VITE_QUERY_URL=https://<PROJECT-REF>.supabase.co/functions/v1/query-snapshots
-VITE_QUERY_SECRET=
+VITE_QUERY_URL=https://<PROJECT-REF>.supabase.co/functions/v1/query-ads
 ```
 
-넣은 뒤 `npm run dev`를 다시 켜면 스마트스토어 카드에 네이버 SA 실광고비가 보입니다. 스토어 매출은 아직 없습니다.
+로컬에서 시크릿을 쓰려면 `VITE_QUERY_SECRET`을 같이 넣으면 됩니다. 넣은 뒤 `npm run dev`를 다시 켜면 마케팅 탭에 네이버 실광고비가 보입니다.

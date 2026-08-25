@@ -26,7 +26,8 @@ Deno.serve(async (request) => {
   const expected = Deno.env.get("QUERY_SECRET") ?? Deno.env.get("COLLECT_SECRET");
   const given =
     request.headers.get("x-query-secret") ?? request.headers.get("x-collect-secret");
-  if (expected && given !== expected) {
+  // GET is the dashboard read path. Keep collect-daily behind COLLECT_SECRET.
+  if (request.method !== "GET" && expected && given !== expected) {
     return json({ error: "unauthorized" }, 401);
   }
 
