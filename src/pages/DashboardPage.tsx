@@ -1,6 +1,12 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { AnalyticsChart } from '../components/dashboard/AnalyticsChart'
-import { ChannelCarousel } from '../components/dashboard/ChannelCarousel'
+import {
+  ChannelCarousel,
+  ChannelLaneFilter,
+  filterChannelsByLane,
+  type ChannelLane,
+} from '../components/dashboard/ChannelCarousel'
+import { ExcelTemplateFill } from '../components/dashboard/ExcelTemplateFill'
 import { PeriodSummary } from '../components/dashboard/PeriodSummary'
 import { SnapshotLookup } from '../components/dashboard/SnapshotLookup'
 import { SnapshotPanel } from '../components/dashboard/SnapshotPanel'
@@ -9,6 +15,7 @@ import { TrendChart } from '../components/dashboard/TrendChart'
 import { Watchlist } from '../components/dashboard/Watchlist'
 import { useDashboard, type DashboardMode } from '../hooks/useDashboard'
 import { formatHoursLabel } from '../lib/format'
+import { applySalesLane } from '../lib/laneDashboard'
 import { kstYmd } from '../lib/kst'
 import './DashboardPage.css'
 
@@ -51,6 +58,14 @@ export function DashboardPage({
     setSelectedId,
     selected,
   } = useDashboard('1M', mode)
+  const [lane, setLane] = useState<ChannelLane>('all')
+  const [enterDone, setEnterDone] = useState(false)
+
+  useEffect(() => {
+    if (status === 'loading' || !data || enterDone) return
+    const timer = window.setTimeout(() => setEnterDone(true), 720)
+    return () => window.clearTimeout(timer)
+  }, [status, data, enterDone])
 
   if (status === 'error') {
     return (
@@ -65,9 +80,42 @@ export function DashboardPage({
     return <Skeleton />
   }
 
-  const topChannel = data.channels.find((channel) => channel.id === data.totals.topChannelId)
   const selectedSeries = selected ? (data.seriesByChannel[selected.id] ?? []) : []
   const isAds = mode === 'ads'
+  const visibleChannels = isAds ? data.channels : filterChannelsByLane(data.channels, lane)
+
+  const salesLane = isAds
+    ? null
+    : applySalesLane(data.channels, data.seriesByChannel, data.totals, data.periodTotals, lane)
+
+  const displayTotals = isAds ? data.totals : (salesLane?.totals ?? data.totals)
+  const displayPeriodTotals = isAds ? data.periodTotals : (salesLane?.periodTotals ?? data.periodTotals)
+  const displaySummaryChannels = isAds ? data.channels : (salesLane?.channels ?? visibleChannels)
+  const weeklyTopId = isAds ? data.periodTotals.weekly.topChannelId : (salesLane?.weeklyTopId ?? data.periodTotals.weekly.topChannelId)
+  const weeklyTopValue = isAds
+    ? data.periodTotals.weekly.topChannelValue
+    : (salesLane?.weeklyTopValue ?? data.periodTotals.weekly.topChannelValue)
+  const weeklyTopChannel = data.channels.find((channel) => channel.id === weeklyTopId)
+  const excelFill = (
+    <ExcelTemplateFill
+      data={data}
+      mode={mode}
+      range={range}
+      from={selectedFrom}
+      to={selectedTo}
+      hours={selectedHours}
+    />
+  )
+
+  const allChannels = data.channels
+
+  function handleLane(next: ChannelLane) {
+    setLane(next)
+    const nextChannels = filterChannelsByLane(allChannels, next)
+    if (selectedId && !nextChannels.some((channel) => channel.id === selectedId)) {
+      setSelectedId(nextChannels[0]?.id ?? null)
+    }
+  }
   const lookupProps = {
     from: selectedFrom,
     to: selectedTo,
@@ -80,30 +128,37 @@ export function DashboardPage({
 
   return (
     <div
-      className="dashboard is-enter"
-      style={{ '--reveal-count': data.channels.length } as CSSProperties}
+      className={enterDone ? 'dashboard' : 'dashboard is-enter'}
+      style={{ '--reveal-count': visibleChannels.length } as CSSProperties}
     >
       <ChannelCarousel
-        channels={data.channels}
+        key={isAds ? 'ads' : 'sales'}
+        channels={visibleChannels}
         selectedId={selectedId}
         onSelect={setSelectedId}
-        title={isAds ? '내 광고' : '내 채널'}
+        title={isAds ? '광고 모아보기' : '채널 모아보기'}
         sourceNote={
-          isAds
-            ? data.dataSource === 'live' && data.latestSnapshotDate
-              ? `광고 SA/DA · ${selectedFrom === selectedTo ? selectedTo : `${selectedFrom} ~ ${selectedTo}`}${
+          isAds && data.dataSource === 'live' && data.latestSnapshotDate
+            ? `${selectedFrom === selectedTo ? selectedTo : `${selectedFrom} ~ ${selectedTo}`}${
                 selectedHours?.length ? ` ${formatHoursLabel(selectedHours)}` : ''
               }`
-              : '광고 수집 대기'
-            : undefined
+            : !isAds
+              ? lane === 'online'
+                ? '온라인 채널'
+                : lane === 'offline'
+                  ? '오프라인 채널'
+                  : '온라인 · 오프라인 채널'
+              : undefined
         }
+        action={isAds ? excelFill : <ChannelLaneFilter value={lane} onChange={handleLane} />}
       />
 
       <div className="dashboard-mid">
         <div className="dashboard-mid__side">
           <SummaryCards
-            totals={data.totals}
-            topChannel={topChannel}
+            totals={displayTotals}
+            topChannel={weeklyTopChannel}
+            topChannelValue={weeklyTopValue}
             mode={mode}
             onOpenMarketing={onOpenMarketing}
           />
@@ -122,7 +177,12 @@ export function DashboardPage({
           lookup={<SnapshotLookup {...lookupProps} />}
         />
         <div className="dashboard-mid__period">
-          <PeriodSummary periodTotals={data.periodTotals} channels={data.channels} mode={mode} aside />
+          <PeriodSummary
+            periodTotals={displayPeriodTotals}
+            channels={displaySummaryChannels}
+            mode={mode}
+            aside
+          />
         </div>
         <SnapshotPanel
           channel={selected}
@@ -138,10 +198,11 @@ export function DashboardPage({
           refreshing={refreshing}
           title={isAds ? '광고 성과' : '통합 성과'}
           highlightTime={data.highlightTime}
+          action={isAds ? undefined : excelFill}
           lookup={<SnapshotLookup {...lookupProps} />}
         />
         <Watchlist
-          channels={data.channels}
+          channels={visibleChannels}
           selectedId={selectedId}
           onSelect={setSelectedId}
           title={isAds ? '광고 워치리스트' : '채널 워치리스트'}

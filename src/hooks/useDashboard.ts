@@ -16,9 +16,11 @@ export type DashboardMode = 'sales' | 'ads'
 
 export function useDashboard(initialRange: DateRangeKey = '1M', mode: DashboardMode = 'sales') {
   const user = useCurrentUser()
-  const { begin, complete, fail } = usePageLoad()
-  const [range, setRange] = useState<DateRangeKey>(initialRange)
+  const pageLoad = usePageLoad()
+  const pageLoadRef = useRef(pageLoad)
+  pageLoadRef.current = pageLoad
   const initialWindow = lookupFromRangeKey(initialRange)
+  const [range, setRange] = useState<DateRangeKey>(initialRange)
   const [selectedFrom, setSelectedFrom] = useState(initialWindow.from)
   const [selectedTo, setSelectedTo] = useState(initialWindow.to)
   const [selectedHours, setSelectedHours] = useState<number[] | null>(null)
@@ -29,18 +31,6 @@ export function useDashboard(initialRange: DateRangeKey = '1M', mode: DashboardM
   const [refreshing, setRefreshing] = useState(false)
   const [reloadTick, setReloadTick] = useState(0)
   const hasLoadedRef = useRef(false)
-
-  useEffect(() => {
-    hasLoadedRef.current = false
-    setData(null)
-    setSelectedId(null)
-    setStatus('loading')
-    const window = lookupFromRangeKey(initialRange, kstYmd())
-    setSelectedFrom(window.from)
-    setSelectedTo(window.to)
-    setSelectedHours(null)
-    setRange(initialRange)
-  }, [initialRange, mode])
 
   useEffect(() => {
     function onHourlyRefresh() {
@@ -62,7 +52,7 @@ export function useDashboard(initialRange: DateRangeKey = '1M', mode: DashboardM
     if (firstLoad) setStatus('loading')
     else {
       setRefreshing(true)
-      begin()
+      pageLoadRef.current.begin()
     }
     setErrorMessage(null)
 
@@ -83,20 +73,20 @@ export function useDashboard(initialRange: DateRangeKey = '1M', mode: DashboardM
         )
         setStatus('ready')
         setRefreshing(false)
-        complete()
+        pageLoadRef.current.complete()
       })
       .catch((error) => {
         if (cancelled) return
         setErrorMessage(error instanceof Error ? error.message : '조회에 실패했습니다.')
         if (firstLoad) setStatus('error')
         setRefreshing(false)
-        fail()
+        pageLoadRef.current.fail()
       })
 
     return () => {
       cancelled = true
     }
-  }, [begin, complete, fail, mode, range, reloadTick, selectedFrom, selectedHours, selectedTo, user])
+  }, [mode, range, reloadTick, selectedFrom, selectedHours, selectedTo, user])
 
   const selected = useMemo(
     () => data?.channels.find((channel) => channel.id === selectedId) ?? data?.channels[0],

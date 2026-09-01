@@ -1,6 +1,6 @@
 import type { ChannelSummary } from '../../adapters/types'
-import { AD_PRODUCT_LABEL, AD_SOURCE_KEYS, CAMPAIGN_TP_LABEL, keysForAd } from '../../ads'
-import { keysForSource, sourceLabel } from '../../channels'
+import { CAMPAIGN_TP_LABEL, keysForAd } from '../../ads'
+import { keysForSource } from '../../channels'
 import { IfCapable } from '../../auth'
 import { formatNumber, formatPct, formatPercent, formatRank, formatRate, formatWon } from '../../lib/format'
 import { cx } from '../../lib/cx'
@@ -9,19 +9,6 @@ import './SnapshotPanel.css'
 
 function metric(value: number, kind: ChannelSummary['kind']): string {
   return kind === 'sns' ? formatNumber(value) : formatWon(value)
-}
-
-function sourceText(channel: ChannelSummary): string {
-  if (channel.kind === 'ads') {
-    const product = channel.product ? AD_PRODUCT_LABEL[channel.product] : ''
-    if (!channel.sourceLive) return `대기 · ${product}`
-    const source = AD_SOURCE_KEYS[channel.source ?? '']?.label ?? channel.source
-    return `실측 · ${product} · ${source}`
-  }
-  const label = sourceLabel(channel.source) || channel.source || ''
-  if (!label) return ''
-  if (channel.sourceLive) return `실측 · ${label}`
-  return `가상 · ${label}`
 }
 
 export function SnapshotPanel({
@@ -49,7 +36,6 @@ export function SnapshotPanel({
         <div>
           <p className="snapshot__kicker">{isAds ? '광고 스냅샷' : '스냅샷'}</p>
           <h3 className="snapshot__title">{channel.name}</h3>
-          {sourceText(channel) ? <p className="snapshot__source">{sourceText(channel)}</p> : null}
         </div>
         <span className={cx('snapshot__change', channel.changePct >= 0 ? 'is-up' : 'is-down')}>
           {formatPct(channel.changePct)}

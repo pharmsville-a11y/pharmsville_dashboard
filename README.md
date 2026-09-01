@@ -2,9 +2,29 @@
 
 쇼핑 채널과 SNS 채널 성과를 한 화면에서 보는 대시보드입니다.
 
-지금은 **네이버 검색광고(SA)·노출광고(DA)** 를 수집합니다. 판매 채널은 사방넷 연동 예정이고, 쿠팡·구글 광고는 `src/ads/catalog.ts` 에서 켭니다.
+지금은 **네이버 검색광고(SA)·노출광고(DA)**, **사방넷 매출·주문(API 3.0)**, **PlusCL 물류(재고·주문)** 를 수집합니다. 쿠팡·구글 광고는 `src/ads/catalog.ts` 에서 켭니다.
 
 Supabase 테이블·수집 Function 안내는 [supabase/README.md](supabase/README.md) 를 보세요.
+
+## 사방넷 매출 (API 3.0)
+
+[개발자센터 소개](https://developer.sabangnet.co.kr/docs/guides/intro) 기준입니다. 프로덕션은 `https://api.sabangnet.co.kr` 입니다. 샌드박스는 고정 응답이라 쓰지 않습니다.
+
+시크릿은 수집기 `.env`에만 넣습니다. 채팅·프론트·Git에 넣지 마세요. 개발자센터 **허용 IP**에 수집 서버 공인 IP를 등록해야 토큰이 나옵니다.
+
+```
+SABANGNET_BASE_URL=https://api.sabangnet.co.kr
+SABANGNET_AUTH_MODE=PRODUCTION
+SABANGNET_CLIENT_TYPE=SB_APP
+SABANGNET_CLIENT_CD=
+SABANGNET_SECRET=
+SABANGNET_SVC_ACNT_ID=
+SABANGNET_SHOP_MAP=
+SABANGNET_MALL_MAP=
+```
+
+`collect-daily`가 매시 `POST /v3/sb/order`로 확정 주문을 모아 `channel_snapshots`에 넣습니다. 주문조회는 `updateOrderStsYn=N` 이라 신규주문을 건드리지 않습니다. 쿠팡 1/2는 `SABANGNET_SHOP_MAP`으로 쇼핑몰ID를 나눕니다.
+
 
 
 ## 실행

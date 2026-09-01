@@ -1,6 +1,7 @@
 export type { AppUser, Capability, Role } from './types'
 export { ROLE_DESCRIPTION, ROLE_LABEL, ROLES } from './types'
 export { can, canAccessPage, canViewSensitiveMetrics, isChannelAllowed, visibleNavItems } from './permissions'
+export { DevLabAccessProvider, useDevLabAccess, canAccessDevLab, canAccessLocalDevPage, isLocalDevOnlyPage, isLocalDevMenuEnabled } from './DevLabAccessProvider'
 export { AuthProvider, useAuth, useCurrentUser } from './AuthProvider'
 export { presentSnapshot } from './redact'
 export { IfCapable } from './IfCapable'

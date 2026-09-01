@@ -87,7 +87,7 @@ export const AD_SOURCE_KEYS: Record<string, FieldKeyDef> = {
     key: 'coupang_ads',
     label: '쿠팡 광고',
     type: 'source',
-    description: '대기.',
+    description: '쿠팡 윙 실측 비용을 검색광고 광고비로 저장.',
   },
   google_ads: {
     key: 'google_ads',

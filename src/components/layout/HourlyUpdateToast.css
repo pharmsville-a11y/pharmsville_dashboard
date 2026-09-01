@@ -109,6 +109,21 @@
   }
 }
 
+@keyframes hourly-toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(18px);
+  }
+}
+
+.hourly-toast.is-leaving {
+  animation: hourly-toast-out 0.32s ease both;
+}
+
 @media (max-width: 900px) {
   .hourly-toast {
     left: 50%;
@@ -117,7 +132,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hourly-toast {
+  .hourly-toast,
+  .hourly-toast.is-leaving {
     animation: none;
   }
 }

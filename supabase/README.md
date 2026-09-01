@@ -1,6 +1,6 @@
 # Supabase 연결
 
-지금은 **네이버 광고 SA/DA** 만 수집합니다. 판매 채널은 사방넷, 쿠팡·구글 광고는 `src/ads/catalog.ts` 에서 켭니다. 키 정의는 `src/ads/keys.ts` 입니다.
+지금은 **네이버 광고 SA/DA**, **사방넷 매출·주문(API 3.0)**, **쿠팡 검색광고**, **PlusCL 물류(재고·주문 레포트)** 를 수집합니다. 쿠팡·구글 광고 스위치는 `src/ads/catalog.ts` 에서 켭니다.
 
 쿠팡 Access Key / Secret 은 프론트가 아니라 **Edge Function Secrets**에만 넣습니다.
 
@@ -42,7 +42,7 @@ Dashboard → **Edge Functions** → **Secrets** (또는 `npx supabase secrets s
 - `COUPANG_2_VENDOR_ID`
 - `COUPANG_2_LABEL`
 
-키가 있는 계정만 실호출합니다. 쿠팡 수집은 카탈로그에서 꺼 둔 상태라 호출하지 않습니다.
+키가 있는 계정만 실호출합니다. 쿠팡 윙 주문 수집은 collect-daily 가 매시·수동 실행 때 함께 돕니다.
 
 네이버 검색광고(SA) — 채팅에 붙여 넣지 말 것. IP 등록은 보통 필요 없습니다.
 
@@ -98,3 +98,56 @@ VITE_QUERY_URL=https://<PROJECT-REF>.supabase.co/functions/v1/query-ads
 ```
 
 로컬에서 시크릿을 쓰려면 `VITE_QUERY_SECRET`을 같이 넣으면 됩니다. 넣은 뒤 `npm run dev`를 다시 켜면 마케팅 탭에 네이버 실광고비가 보입니다.
+
+## 7. PlusCL 물류
+
+[Open API 문서](https://outlink.pluscl.com/service/api/index.html) 기준입니다. Base URL은 `https://service.pluscl.com`, 헤더는 `auth_key`, POST JSON 입니다.
+
+인증키는 **Edge Function Secrets**에만 넣습니다. 값을 채팅·GitHub·프론트에 넣지 마세요. **API 키만 받았다면 `PLUSCL_AUTH_KEY`만** 넣으면 됩니다. 창고·화주 코드는 비워 두면 기초정보에서 채웁니다.
+
+```
+PLUSCL_AUTH_KEY=
+```
+
+업체코드가 따로 있으면 같이 넣습니다.
+
+```
+PLUSCL_COMPANY_CODE=
+PLUSCL_WAREHOUSE_CODE=
+PLUSCL_SELLER_CODE=
+PLUSCL_USER_ID=
+PLUSCL_COMPANY_ID=
+PLUSCL_BASE_URL=https://service.pluscl.com
+```
+
+```bash
+npx supabase functions deploy collect-pluscl --no-verify-jwt
+npx supabase functions deploy query-pluscl --no-verify-jwt
+```
+
+매시 광고 수집(`collect-daily`)이 키가 있으면 PlusCL도 같이 돌립니다. 매출·주문 탭은 `query-pluscl` GET을 읽습니다. 수취인·전화·주소는 DB에 저장하지 않습니다.
+
+## 8. 사방넷 매출·주문 (API 3.0)
+
+[개발자센터 소개](https://developer.sabangnet.co.kr/docs/guides/intro) 기준입니다. 프로덕션 호스트는 `https://api.sabangnet.co.kr` 입니다. 샌드박스는 고정 응답이라 실매출 수집에 쓰지 않습니다.
+
+시크릿은 서버 `.env`에만 넣습니다. 채팅·프론트·GitHub에 넣지 마세요. 개발자센터에서 **허용 IP**에 수집 서버 공인 IP를 등록해야 토큰이 발급됩니다.
+
+```
+SABANGNET_BASE_URL=https://api.sabangnet.co.kr
+SABANGNET_AUTH_MODE=PRODUCTION
+SABANGNET_CLIENT_TYPE=SB_APP
+SABANGNET_CLIENT_CD=
+SABANGNET_SECRET=
+SABANGNET_SVC_ACNT_ID=
+SABANGNET_SHOP_MAP=
+SABANGNET_MALL_MAP=
+```
+
+- `SABANGNET_CLIENT_CD` / 시크릿: 앱 또는 솔루션 등록 후 발급
+- `SABANGNET_SVC_ACNT_ID`: 사용 고객사 목록의 서비스코드
+- `SABANGNET_SHOP_MAP`: 쇼핑몰ID(`shmaId`) 또는 로그인ID → 채널 ID JSON. 쿠팡 1/2 구분할 때 씁니다.
+- 주문조회는 `updateOrderStsYn=N` 이라 신규주문을 주문확인으로 바꾸지 않습니다.
+
+`collect-daily`가 매시 광고 수집과 함께 사방넷 매출을 `channel_snapshots`에 넣습니다. 대시보드는 `query-snapshots` GET을 읽습니다.
+

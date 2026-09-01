@@ -1,5 +1,7 @@
 export {
   CHANNEL_CATALOG,
+  canonicalChannelId,
+  definitionForChannel,
   enabledChannelIds,
   enabledChannels,
   getChannel,

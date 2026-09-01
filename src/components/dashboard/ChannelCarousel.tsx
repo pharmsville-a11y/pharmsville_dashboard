@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { FreeMode } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import type { Swiper as SwiperClass } from 'swiper'
@@ -11,6 +11,45 @@ import { cx } from '../../lib/cx'
 import { ChannelBadge } from '../ui/ChannelBadge'
 import { Sparkline } from '../ui/Sparkline'
 import './ChannelCarousel.css'
+
+export type ChannelLane = 'all' | 'online' | 'offline'
+
+const LANES: Array<{ id: ChannelLane; label: string }> = [
+  { id: 'all', label: '통합' },
+  { id: 'online', label: '온라인' },
+  { id: 'offline', label: '오프라인' },
+]
+
+export function filterChannelsByLane(channels: ChannelSummary[], lane: ChannelLane) {
+  if (lane === 'online') return channels.filter((channel) => channel.source !== 'pluscl')
+  if (lane === 'offline') return channels.filter((channel) => channel.source === 'pluscl')
+  return channels
+}
+
+export function ChannelLaneFilter({
+  value,
+  onChange,
+}: {
+  value: ChannelLane
+  onChange: (lane: ChannelLane) => void
+}) {
+  return (
+    <div className="carousel__lanes" role="tablist" aria-label="채널 구분">
+      {LANES.map((lane) => (
+        <button
+          key={lane.id}
+          type="button"
+          role="tab"
+          aria-selected={value === lane.id}
+          onClick={() => onChange(lane.id)}
+          className={cx('carousel__lane', value === lane.id && 'is-on')}
+        >
+          {lane.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 function primaryText(channel: ChannelSummary): string {
   if (channel.kind === 'sns') return formatNumber(channel.primaryValue)
@@ -34,16 +73,38 @@ export function ChannelCarousel({
   onSelect,
   title = '내 채널',
   sourceNote,
+  action,
 }: {
   channels: ChannelSummary[]
   selectedId: string | null
   onSelect: (id: string) => void
   title?: string
   sourceNote?: string
+  action?: ReactNode
 }) {
   const [swiper, setSwiper] = useState<SwiperClass | null>(null)
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(false)
+  const [laneEntering, setLaneEntering] = useState(false)
+  const firstChannelKey = useRef(true)
+  const channelKey = channels.map((channel) => channel.id).join('|')
+
+  useEffect(() => {
+    if (firstChannelKey.current) {
+      firstChannelKey.current = false
+      return
+    }
+    setLaneEntering(true)
+    const timer = window.setTimeout(() => setLaneEntering(false), 560)
+    return () => window.clearTimeout(timer)
+  }, [channelKey])
+
+  useEffect(() => {
+    if (!swiper) return
+    swiper.slideTo(0, 0)
+    swiper.update()
+    syncArrows(swiper, setCanPrev, setCanNext)
+  }, [channelKey, swiper])
 
   function handleSwiper(instance: SwiperClass) {
     setSwiper(instance)
@@ -63,10 +124,16 @@ export function ChannelCarousel({
   return (
     <section className="carousel">
       <div className="carousel__head">
-        <h2>{title}</h2>
-        {sourceNote ? <p className="carousel__source">{sourceNote}</p> : null}
+        <div className="carousel__head-copy">
+          <h2>{title}</h2>
+          {sourceNote ? <p className="carousel__source">{sourceNote}</p> : null}
+        </div>
+        {action}
       </div>
       <div className="carousel__wrap">
+        {channels.length === 0 ? (
+          <p className="carousel__empty">해당하는 채널이 없습니다.</p>
+        ) : (
         <Swiper
           className="carousel__scroller"
           modules={[FreeMode]}
@@ -95,8 +162,12 @@ export function ChannelCarousel({
                 <button
                   type="button"
                   onClick={() => onSelect(channel.id)}
-                  className={cx('carousel__card', channel.id === selectedId && 'is-selected')}
-                  style={{ background: channel.accent, '--reveal-i': index } as CSSProperties}
+                  className={cx(
+                    'carousel__card',
+                    channel.id === selectedId && 'is-selected',
+                    laneEntering && 'is-lane-enter',
+                  )}
+                  style={{ '--card-accent': channel.accent, '--reveal-i': index } as CSSProperties}
                 >
                   <div className="carousel__top">
                     <div className="carousel__meta">
@@ -105,7 +176,11 @@ export function ChannelCarousel({
                         <p className="carousel__name">{channel.name}</p>
                         <p className="carousel__ticker">
                           {channel.ticker}
-                          {channel.sourceLive ? <span className="carousel__live">LIVE</span> : null}
+                          {channel.sourceLive ? (
+                            <span className="carousel__live">LIVE</span>
+                          ) : channel.source === 'pluscl' ? (
+                            <span className="carousel__offline">오프라인</span>
+                          ) : null}
                         </p>
                       </div>
                     </div>
@@ -115,12 +190,15 @@ export function ChannelCarousel({
                   </div>
                   <p className="carousel__value">{primaryText(channel)}</p>
                   {channel.kind === 'ads' ? <p className="carousel__ad">{channel.primaryLabel}</p> : null}
-                  <Sparkline data={channel.sparkline} color={channel.sparkColor} />
+                  <Sparkline data={channel.sparkline} color={channel.sparkColor} width={208} height={32} />
                 </button>
               </SwiperSlide>
             )
           })}
         </Swiper>
+        )}
+        {channels.length === 0 ? null : (
+          <>
         <button
           type="button"
           aria-label="이전"
@@ -139,6 +217,8 @@ export function ChannelCarousel({
         >
           <ChevronRight size={22} />
         </button>
+          </>
+        )}
       </div>
     </section>
   )

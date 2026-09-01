@@ -100,8 +100,8 @@ export function TrendChart({
         ]
       : [
           { id: 'combined', label: '통합' },
-          { id: 'commerce', label: '쇼핑' },
-          { id: 'sns', label: 'SNS' },
+          { id: 'commerce', label: '온라인' },
+          { id: 'sns', label: '오프라인' },
           { id: 'selected', label: selectedName ?? '선택 채널' },
         ]
 

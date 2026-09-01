@@ -8,7 +8,8 @@
   padding: 4px 8px 4px 4px;
   border: 0;
   border-radius: 999px;
-  background: var(--canvas);
+  background: #fff;
+  outline: var(--panel-ring);
   text-align: left;
 }
 
@@ -77,7 +78,7 @@
 .lookup-modal {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 10000;
   display: grid;
   place-items: center;
   padding: 24px 16px;
@@ -246,6 +247,7 @@
 .lookup-cal__grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  justify-items: center;
 }
 
 .lookup-cal__week {
@@ -254,51 +256,75 @@
 
 .lookup-cal__week span {
   padding: 6px 0;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
   text-align: center;
 }
 
-.lookup-cal__day {
+.lookup-cal__week span.is-sun {
+  color: #ef4444;
+}
+
+.lookup-cal__cell {
+  display: flex;
+  width: 100%;
   height: 38px;
-  margin: 1px 0;
-  border: 0;
-  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.lookup-cal__cell.is-in {
+  background: #f3e8ff;
+}
+
+.lookup-cal__cell.is-start {
+  background: linear-gradient(to right, transparent 50%, #f3e8ff 50%);
+}
+
+.lookup-cal__cell.is-end {
+  background: linear-gradient(to left, transparent 50%, #f3e8ff 50%);
+}
+
+.lookup-cal__cell.is-start.is-end {
   background: transparent;
-  color: var(--ink);
+}
+
+.lookup-cal__day {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #cbd5e1;
   font-size: 13px;
   font-weight: 600;
 }
 
-.lookup-cal__day:hover:not(:disabled) {
-  background: var(--canvas);
+.lookup-cal__day.is-month {
+  color: var(--ink);
 }
 
-.lookup-cal__day.is-in {
-  background: var(--brand-soft);
+.lookup-cal__day:hover:not(.is-selected):not(:disabled) {
+  background: #f1f5f9;
+}
+
+.lookup-cal__day.is-selected {
+  background: var(--brand);
+  color: #fff;
+}
+
+.lookup-cal__day.is-today:not(.is-selected) {
+  box-shadow: inset 0 0 0 1.5px #ddd6fe;
   color: var(--brand);
-  border-radius: 0;
 }
 
-.lookup-cal__day.is-start {
-  background: var(--brand);
-  color: #fff;
-  border-radius: 10px 0 0 10px;
+.lookup-cal__day.is-holiday:not(.is-selected) {
+  color: #ef4444;
 }
 
-.lookup-cal__day.is-end {
-  background: var(--brand);
-  color: #fff;
-  border-radius: 0 10px 10px 0;
-}
-
-.lookup-cal__day.is-start.is-end {
-  border-radius: 10px;
-}
-
-.lookup-cal__day.is-today:not(.is-start):not(.is-end) {
-  box-shadow: inset 0 0 0 1px rgba(108, 92, 231, 0.35);
+.lookup-cal__day.is-today.is-holiday:not(.is-selected) {
+  color: #ef4444;
 }
 
 .lookup-cal__day:disabled {
@@ -546,6 +572,8 @@
 
 .lookup-modal__foot p {
   margin: 0;
+  min-width: 0;
+  flex: 1;
   color: var(--muted);
   font-size: 12px;
 }
@@ -555,22 +583,41 @@
   gap: 8px;
 }
 
+.lookup-modal__presets-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lookup-modal__today,
 .lookup-modal__ghost,
 .lookup-modal__apply {
   height: 38px;
   padding: 0 14px;
-  border: 0;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 700;
 }
 
+.lookup-modal__today,
 .lookup-modal__ghost {
-  background: var(--canvas);
-  color: var(--muted);
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: var(--ink);
+}
+
+.lookup-modal__today:hover,
+.lookup-modal__ghost:hover {
+  background: #f8fafc;
+}
+
+.lookup-modal__today:disabled {
+  cursor: default;
+  opacity: 0.4;
 }
 
 .lookup-modal__apply {
+  border: 0;
   background: var(--brand);
   color: #fff;
   box-shadow: 0 8px 16px rgba(108, 92, 231, 0.28);

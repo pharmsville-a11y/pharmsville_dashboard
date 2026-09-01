@@ -2,7 +2,7 @@ import type { ChannelKind, ChannelMeta } from '../adapters/types'
 
 export type AdPlatform = 'naver' | 'coupang' | 'google'
 export type AdProduct = 'sa' | 'da'
-export type AdCollectorId = 'naver_searchad' | 'none'
+export type AdCollectorId = 'naver_searchad' | 'coupang_ads' | 'none'
 
 export interface AdDefinition extends ChannelMeta {
   kind: ChannelKind
@@ -66,9 +66,9 @@ export const AD_CATALOG: AdDefinition[] = [
     badge: '#E74C3C',
     accent: '#FCE8DE',
     sparkColor: '#E85D04',
-    enabled: false,
-    collector: 'none',
-    description: '쿠팡 광고 SA. 수집기 미구현.',
+    enabled: true,
+    collector: 'coupang_ads',
+    description: '쿠팡 실측 광고비. 마케팅 메뉴 전용. 매출·주문은 사방넷.',
   },
   {
     id: adId('coupang', 'da'),

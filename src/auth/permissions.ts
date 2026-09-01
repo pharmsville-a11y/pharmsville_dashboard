@@ -1,4 +1,6 @@
 import type { PageId } from '../components/layout/types'
+import { ADMIN_LOCKED_PAGES, type NavConfig } from '../nav/catalog'
+import { loadNavConfig } from '../nav/config'
 import type { AppUser, Capability, Role } from './types'
 
 /**
@@ -19,11 +21,13 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     'screen.dashboard',
     'screen.channels',
     'screen.commerce',
+    'screen.stock',
     'screen.marketing',
     'screen.settlement',
     'screen.reports',
     'screen.tutorial',
     'screen.accounts',
+    'screen.menu',
   ]),
   master: new Set([
     'apikeys.manage',
@@ -35,6 +39,7 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     'screen.dashboard',
     'screen.channels',
     'screen.commerce',
+    'screen.stock',
     'screen.marketing',
     'screen.settlement',
     'screen.reports',
@@ -47,20 +52,10 @@ const ROLE_CAPABILITIES: Record<Role, ReadonlySet<Capability>> = {
     'screen.dashboard',
     'screen.channels',
     'screen.commerce',
+    'screen.stock',
     'screen.reports',
     'screen.tutorial',
   ]),
-}
-
-const PAGE_CAPABILITY: Record<PageId, Capability> = {
-  dashboard: 'screen.dashboard',
-  channels: 'screen.channels',
-  commerce: 'screen.commerce',
-  marketing: 'screen.marketing',
-  settlement: 'screen.settlement',
-  reports: 'screen.reports',
-  tutorial: 'screen.tutorial',
-  accounts: 'screen.accounts',
 }
 
 const SENSITIVE_METRICS = ['metrics.adSpend', 'metrics.roi'] as const
@@ -73,10 +68,10 @@ export function canViewSensitiveMetrics(role: Role): boolean {
   return SENSITIVE_METRICS.every((capability) => can(role, capability))
 }
 
-export function canAccessPage(role: Role, page: PageId): boolean {
-  const capability = PAGE_CAPABILITY[page]
-  if (!capability) return false
-  return can(role, capability)
+export function canAccessPage(role: Role, page: PageId, config: NavConfig = loadNavConfig()): boolean {
+  if (page === 'menu') return role === 'admin'
+  if (role === 'admin' && ADMIN_LOCKED_PAGES.has(page)) return true
+  return config.roles[page]?.[role] === true
 }
 
 export function isChannelAllowed(user: AppUser, channelId: string): boolean {
@@ -84,6 +79,13 @@ export function isChannelAllowed(user: AppUser, channelId: string): boolean {
   return user.allowedChannels.includes(channelId)
 }
 
-export function visibleNavItems<T extends { id: PageId }>(role: Role, items: T[]): T[] {
-  return items.filter((item) => canAccessPage(role, item.id))
+export function visibleNavItems<T extends { id: PageId }>(
+  role: Role,
+  items: T[],
+  config: NavConfig = loadNavConfig(),
+): T[] {
+  const rank = new Map(config.order.map((id, index) => [id, index]))
+  return items
+    .filter((item) => canAccessPage(role, item.id, config))
+    .sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999))
 }

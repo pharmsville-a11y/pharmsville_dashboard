@@ -1,8 +1,42 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { ROLES, ROLE_LABEL, displayName, useAuth, useCurrentUser } from '../auth'
-import type { Role } from '../auth/types'
+import type { AppUser, Role } from '../auth/types'
 import { usePageReady } from '../hooks/usePageReady'
+import { showAppToast } from '../lib/appToast'
 import './AccountsPage.css'
+
+type AccountDraftRow = {
+  name: string
+  note: string
+  role: Role
+  password: string
+}
+
+function draftFromAccounts(accounts: AppUser[]): Record<string, AccountDraftRow> {
+  return Object.fromEntries(
+    accounts.map((account) => [
+      account.id,
+      {
+        name: account.name ?? '',
+        note: account.note ?? '',
+        role: account.role,
+        password: '',
+      },
+    ]),
+  )
+}
+
+function isDraftDirty(accounts: AppUser[], draft: Record<string, AccountDraftRow>): boolean {
+  for (const account of accounts) {
+    const row = draft[account.id]
+    if (!row) continue
+    if (row.name !== (account.name ?? '')) return true
+    if (row.note !== (account.note ?? '')) return true
+    if (row.role !== account.role) return true
+    if (row.password.length > 0) return true
+  }
+  return false
+}
 
 export function AccountsPage() {
   const actor = useCurrentUser()
@@ -12,26 +46,33 @@ export function AccountsPage() {
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [name, setName] = useState('')
-  const [nickname, setNickname] = useState('')
   const [note, setNote] = useState('')
   const [role, setRole] = useState<Role>('manager')
-  const [resets, setResets] = useState<Record<string, string>>({})
+  const [draft, setDraft] = useState<Record<string, AccountDraftRow>>(() => draftFromAccounts(accounts))
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
 
   useEffect(() => {
-    if (!error && !message) return
-    const timer = window.setTimeout(() => {
-      setError('')
-      setMessage('')
-    }, 5000)
+    setDraft(draftFromAccounts(accounts))
+  }, [accounts])
+
+  useEffect(() => {
+    if (!error) return
+    const timer = window.setTimeout(() => setError(''), 5000)
     return () => window.clearTimeout(timer)
-  }, [error, message])
+  }, [error])
+
+  const dirty = useMemo(() => isDraftDirty(accounts, draft), [accounts, draft])
+
+  function patchDraft(userId: string, patch: Partial<AccountDraftRow>) {
+    setDraft((current) => ({
+      ...current,
+      [userId]: { ...current[userId], ...patch },
+    }))
+  }
 
   async function handleCreate(event: FormEvent) {
     event.preventDefault()
     setError('')
-    setMessage('')
     if (password !== passwordConfirm) {
       setError('비밀번호 확인이 일치하지 않습니다.')
       return
@@ -41,7 +82,6 @@ export function AccountsPage() {
         loginId,
         password,
         name,
-        nickname,
         note,
         role,
         allowedChannels: 'ALL',
@@ -50,53 +90,51 @@ export function AccountsPage() {
       setPassword('')
       setPasswordConfirm('')
       setName('')
-      setNickname('')
       setNote('')
       setRole('manager')
-      setMessage(`${created.loginId} 계정을 만들었습니다.`)
+      showAppToast(`${created.loginId} 계정을 만들었습니다.`)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '계정을 만들지 못했습니다.')
     }
   }
 
-  function handleGrant(userId: string, nextRole: Role) {
+  async function handleSave() {
+    if (!dirty) return
     setError('')
-    setMessage('')
     try {
-      grantRole(userId, nextRole)
-      setMessage('권한을 변경했습니다.')
+      for (const account of accounts) {
+        const row = draft[account.id]
+        if (!row) continue
+
+        const patch: { name?: string; note?: string; password?: string } = {}
+        if (row.name !== (account.name ?? '')) patch.name = row.name
+        if (row.note !== (account.note ?? '')) patch.note = row.note
+        if (row.password.length > 0) patch.password = row.password
+
+        if (Object.keys(patch).length > 0) {
+          await updateAccount(account.id, patch)
+        }
+        if (row.role !== account.role) {
+          grantRole(account.id, row.role)
+        }
+      }
+      showAppToast('저장되었습니다.')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '권한을 변경하지 못했습니다.')
+      setError(caught instanceof Error ? caught.message : '계정을 저장하지 못했습니다.')
     }
   }
 
-  function handlePatch(userId: string, patch: { nickname?: string; note?: string }) {
+  function handleCancel() {
+    setDraft(draftFromAccounts(accounts))
     setError('')
-    void updateAccount(userId, patch).catch((caught) => {
-      setError(caught instanceof Error ? caught.message : '계정을 수정하지 못했습니다.')
-    })
-  }
-
-  async function handleResetPassword(userId: string, login: string) {
-    const next = resets[userId] ?? ''
-    setError('')
-    setMessage('')
-    try {
-      await updateAccount(userId, { password: next })
-      setResets((current) => ({ ...current, [userId]: '' }))
-      setMessage(`${login} 비밀번호를 변경했습니다.`)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '비밀번호를 변경하지 못했습니다.')
-    }
   }
 
   function handleDelete(userId: string, label: string) {
     if (!window.confirm(`${label} 계정을 삭제할까요?`)) return
     setError('')
-    setMessage('')
     try {
       deleteAccount(userId)
-      setMessage(`${label} 계정을 삭제했습니다.`)
+      showAppToast(`${label} 계정을 삭제했습니다.`)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '계정을 삭제하지 못했습니다.')
     }
@@ -106,7 +144,10 @@ export function AccountsPage() {
     <section className="accounts is-enter">
       <header className="accounts__head">
         <h2>계정 관리</h2>
-        <p>최고관리자가 계정 ID와 비밀번호를 발급합니다. 현재 로그인: {displayName(actor)}</p>
+        <p>
+          사용자명·비고·등급·비밀번호는 표에서 수정한 뒤 저장을 눌러야 반영됩니다. 현재 로그인:{' '}
+          {displayName(actor)}
+        </p>
       </header>
 
       <form className="accounts__form" onSubmit={(event) => void handleCreate(event)}>
@@ -147,16 +188,8 @@ export function AccountsPage() {
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="이름"
-            required
-          />
-        </label>
-        <label>
-          별명
-          <input
-            value={nickname}
-            onChange={(event) => setNickname(event.target.value)}
             placeholder="화면에 보일 이름"
+            required
           />
         </label>
         <label className="accounts__form-note">
@@ -181,101 +214,98 @@ export function AccountsPage() {
       </form>
 
       {error ? <p className="accounts__error">{error}</p> : null}
-      {message ? <p className="accounts__ok">{message}</p> : null}
 
       <div className="accounts__table-wrap">
         <table className="accounts__table">
           <thead>
             <tr>
-              <th>사용자</th>
               <th>계정 ID</th>
-              <th>별명</th>
+              <th>사용자명</th>
               <th>비고</th>
               <th>등급</th>
               <th>비밀번호</th>
-              <th>권한 변경</th>
               <th>삭제</th>
             </tr>
           </thead>
           <tbody>
-            {accounts.map((account) => (
-              <tr key={account.id}>
-                <td>
-                  <strong>{account.name}</strong>
-                  <span>{account.title}</span>
-                </td>
-                <td>
-                  <code className="accounts__login-id">{account.loginId}</code>
-                </td>
-                <td>
-                  <input
-                    className="accounts__cell-input"
-                    value={account.nickname ?? ''}
-                    placeholder="별명"
-                    aria-label={`${account.name} 별명`}
-                    onChange={(event) => handlePatch(account.id, { nickname: event.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    className="accounts__cell-input accounts__cell-note"
-                    value={account.note ?? ''}
-                    placeholder="비고"
-                    aria-label={`${account.name} 비고`}
-                    onChange={(event) => handlePatch(account.id, { note: event.target.value })}
-                  />
-                </td>
-                <td>{ROLE_LABEL[account.role]}</td>
-                <td>
-                  <div className="accounts__reset">
+            {accounts.map((account) => {
+              const row = draft[account.id] ?? {
+                name: account.name ?? '',
+                note: account.note ?? '',
+                role: account.role,
+                password: '',
+              }
+              return (
+                <tr key={account.id}>
+                  <td>
+                    <code className="accounts__login-id">{account.loginId}</code>
+                  </td>
+                  <td>
                     <input
-                      className="accounts__cell-input"
+                      className="accounts__cell-input accounts__cell-name"
+                      value={row.name}
+                      placeholder="화면에 보일 이름"
+                      aria-label={`${account.loginId} 사용자명`}
+                      onChange={(event) => patchDraft(account.id, { name: event.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="accounts__cell-input accounts__cell-note"
+                      value={row.note}
+                      placeholder="비고"
+                      aria-label={`${account.name} 비고`}
+                      onChange={(event) => patchDraft(account.id, { note: event.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      value={row.role}
+                      onChange={(event) => patchDraft(account.id, { role: event.target.value as Role })}
+                    >
+                      {ROLES.map((item) => (
+                        <option key={item} value={item}>
+                          {ROLE_LABEL[item]}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      className="accounts__cell-input accounts__cell-password"
                       type="password"
-                      value={resets[account.id] ?? ''}
-                      placeholder="새 비밀번호"
+                      value={row.password}
+                      placeholder="변경 시 입력"
                       aria-label={`${account.loginId} 새 비밀번호`}
                       autoComplete="new-password"
-                      onChange={(event) =>
-                        setResets((current) => ({ ...current, [account.id]: event.target.value }))
-                      }
+                      onChange={(event) => patchDraft(account.id, { password: event.target.value })}
                     />
+                  </td>
+                  <td>
                     <button
                       type="button"
-                      className="accounts__reset-btn"
-                      disabled={!(resets[account.id] ?? '').length}
-                      onClick={() => void handleResetPassword(account.id, account.loginId)}
+                      className="accounts__delete"
+                      disabled={account.id === actor.id}
+                      onClick={() => handleDelete(account.id, account.loginId)}
                     >
-                      변경
+                      삭제
                     </button>
-                  </div>
-                </td>
-                <td>
-                  <select
-                    value={account.role}
-                    onChange={(event) => handleGrant(account.id, event.target.value as Role)}
-                  >
-                    {ROLES.map((item) => (
-                      <option key={item} value={item}>
-                        {ROLE_LABEL[item]}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="accounts__delete"
-                    disabled={account.id === actor.id}
-                    onClick={() => handleDelete(account.id, account.loginId)}
-                  >
-                    삭제
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
+
+      <footer className="accounts__actions">
+        <button type="button" className="accounts__cancel" disabled={!dirty} onClick={handleCancel}>
+          취소
+        </button>
+        <button type="button" className="accounts__save" disabled={!dirty} onClick={() => void handleSave()}>
+          저장
+        </button>
+      </footer>
     </section>
   )
 }

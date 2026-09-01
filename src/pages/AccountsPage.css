@@ -138,17 +138,17 @@
   font-weight: 600;
 }
 
-.accounts__table td strong {
-  display: block;
-}
-
-.accounts__table td span {
-  color: var(--muted);
-  font-size: 12px;
+.accounts__table tr:last-child td {
+  border-bottom: 0;
 }
 
 .accounts__cell-input {
   width: 140px;
+}
+
+.accounts__cell-name {
+  width: min(160px, 18vw);
+  min-width: 120px;
 }
 
 .accounts__cell-note {
@@ -159,29 +159,6 @@
 .accounts__login-id {
   font-size: 13px;
   font-weight: 600;
-}
-
-.accounts__reset {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.accounts__reset-btn {
-  height: 36px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--brand-soft);
-  color: var(--brand);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.accounts__reset-btn:disabled {
-  cursor: not-allowed;
-  background: #f3f4f6;
-  color: #94a3b8;
 }
 
 .accounts__delete {
@@ -199,4 +176,46 @@
   cursor: not-allowed;
   background: #f3f4f6;
   color: #94a3b8;
+}
+
+.accounts__cell-password {
+  width: min(200px, 22vw);
+  min-width: 140px;
+}
+
+.accounts__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  position: sticky;
+  bottom: 12px;
+}
+
+.accounts__cancel,
+.accounts__save {
+  min-width: 88px;
+  height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.accounts__cancel {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--panel-shadow);
+  outline: var(--panel-ring);
+}
+
+.accounts__cancel:disabled,
+.accounts__save:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.accounts__save {
+  background: var(--brand);
+  color: #fff;
 }

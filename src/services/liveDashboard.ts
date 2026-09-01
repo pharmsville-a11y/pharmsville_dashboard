@@ -386,7 +386,7 @@ export function buildLiveSnapshot(
       topChannelId: top?.id ?? channels[0]?.id ?? '',
     },
     periodTotals: buildPeriodTotals(liveRows, asOfDate),
-    dataSource: liveRows.length > 0 ? 'live' : 'mock',
+    dataSource: 'live',
     latestSnapshotDate: asOfDate,
     availableHours: hoursInRange(liveRows, from, to),
     highlightTime,

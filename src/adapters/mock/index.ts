@@ -1,5 +1,4 @@
-import { makeMockAdapter } from './makeMockAdapter'
-import { MOCK_CHANNEL_SEEDS } from './seeds'
 import type { ChannelAdapter } from '../types'
 
-export const mockAdapters: ChannelAdapter[] = MOCK_CHANNEL_SEEDS.map(makeMockAdapter)
+/** 화면·집계에서는 쓰지 않습니다. */
+export const mockAdapters: ChannelAdapter[] = []

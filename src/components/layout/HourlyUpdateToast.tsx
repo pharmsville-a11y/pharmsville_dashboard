@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 import { HOURLY_UPDATE_PREVIEW_EVENT, requestHourlyRefresh } from '../../lib/hourlyRefresh'
-import { kstHour, kstHourStamp, msUntilNextKstHour } from '../../lib/kst'
+import {
+  isPastKstCollect,
+  kstHour,
+  kstHourStamp,
+  msUntilNextKstCollect,
+} from '../../lib/kst'
 import './HourlyUpdateToast.css'
 
-const COLLECT_GRACE_MS = 25_000
+/** cron: :02 collect-daily, :05 collect-pluscl — 마지막 수집 끝난 뒤 */
+const COLLECT_MINUTE = 5
+const COLLECT_GRACE_MS = 45_000
 const POLL_MS = 30_000
 
 export function HourlyUpdateToast() {
@@ -12,6 +19,7 @@ export function HourlyUpdateToast() {
   const seenStamp = useRef(kstHourStamp())
 
   const check = useCallback(() => {
+    if (!isPastKstCollect(new Date(), COLLECT_MINUTE, COLLECT_GRACE_MS)) return
     const stamp = kstHourStamp()
     if (stamp === seenStamp.current) return
     setHour(kstHour())
@@ -24,7 +32,7 @@ export function HourlyUpdateToast() {
       timeoutId = window.setTimeout(() => {
         check()
         schedule()
-      }, msUntilNextKstHour(new Date(), COLLECT_GRACE_MS))
+      }, msUntilNextKstCollect(new Date(), COLLECT_MINUTE, COLLECT_GRACE_MS))
     }
 
     schedule()

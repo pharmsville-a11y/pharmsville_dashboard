@@ -29,7 +29,7 @@ export const SNAPSHOT_KEYS: Record<string, FieldKeyDef> = {
     key: 'channel_id',
     label: '채널 ID',
     type: 'text',
-    description: 'naver, coupang_1 등. 화면 이름과 별개의 저장 키.',
+    description: 'naver, coupang, elevenst 등. 화면 이름과 별개의 저장 키.',
   },
   kind: {
     key: 'kind',
@@ -47,7 +47,7 @@ export const SNAPSHOT_KEYS: Record<string, FieldKeyDef> = {
     key: 'sales',
     label: '매출',
     type: 'number',
-    description: '원 단위 매출. 스마트스토어는 아직 미연동이라 null.',
+    description: '원 단위 매출. 사방넷 주문 원장(ORDER_TOT_AMT / 판매가).',
   },
   orders: {
     key: 'orders',
@@ -119,6 +119,18 @@ export const SOURCE_KEYS: Record<string, FieldKeyDef> = {
     type: 'source',
     description: '예전에 넣던 목업. 더 이상 저장하지 않음.',
   },
+  sabangnet: {
+    key: 'sabangnet',
+    label: '사방넷',
+    type: 'source',
+    description: '사방넷 API 3.0 주문 목록 조회. 판매 채널 매출·주문 원장.',
+  },
+  pluscl: {
+    key: 'pluscl',
+    label: '오프라인',
+    type: 'source',
+    description: 'PlusCL 주문사 매출. 사방넷_APPLE6·CJ직배·자사주문은 제외.',
+  },
 }
 
 /** extra.naver_sa 객체 */
@@ -160,31 +172,127 @@ export const CHANNEL_ID_KEYS: Record<string, FieldKeyDef> = {
     key: 'naver',
     label: '스마트스토어',
     type: 'channel_id',
-    description: '화면 이름 스마트스토어. 현재 실측은 검색광고.',
+    description: '화면 이름 스마트스토어. 매출은 사방넷, 광고는 naver_sa.',
   },
   makeshop: {
     key: 'makeshop',
     label: '메이크샵',
     type: 'channel_id',
-    description: '대기. enabled=false.',
+    description: '메이크샵. 매출·주문은 사방넷.',
   },
-  coupang_1: {
-    key: 'coupang_1',
-    label: '쿠팡 1',
+  coupang: {
+    key: 'coupang',
+    label: '쿠팡',
     type: 'channel_id',
-    description: '대기. 수집 코드는 있음.',
-  },
-  coupang_2: {
-    key: 'coupang_2',
-    label: '쿠팡 2',
-    type: 'channel_id',
-    description: '대기. 수집 코드는 있음.',
+    description: '쿠팡. 매출·주문은 사방넷. 광고비는 마케팅 메뉴 coupang_sa.',
   },
   elevenst: {
     key: 'elevenst',
     label: '11번가',
     type: 'channel_id',
-    description: '대기.',
+    description: '11번가. 매출·주문은 사방넷.',
+  },
+  shoppingnt: {
+    key: 'shoppingnt',
+    label: '쇼핑엔티',
+    type: 'channel_id',
+    description: '쇼핑엔티. 매출·주문은 사방넷.',
+  },
+  ezwel: {
+    key: 'ezwel',
+    label: '현대이지웰',
+    type: 'channel_id',
+    description: '현대이지웰. 매출·주문은 사방넷.',
+  },
+  gsshop: {
+    key: 'gsshop',
+    label: 'GS shop',
+    type: 'channel_id',
+    description: 'GS shop. 매출·주문은 사방넷.',
+  },
+  cjonstyle: {
+    key: 'cjonstyle',
+    label: 'CJ온스타일',
+    type: 'channel_id',
+    description: 'CJ온스타일. 매출·주문은 사방넷.',
+  },
+  toss: {
+    key: 'toss',
+    label: '토스쇼핑',
+    type: 'channel_id',
+    description: '토스쇼핑. 매출·주문은 사방넷.',
+  },
+  nshome: {
+    key: 'nshome',
+    label: 'NS홈쇼핑',
+    type: 'channel_id',
+    description: 'NS홈쇼핑. 매출·주문은 사방넷.',
+  },
+  samsungcard: {
+    key: 'samsungcard',
+    label: '삼성카드쇼핑',
+    type: 'channel_id',
+    description: '삼성카드쇼핑. 매출·주문은 사방넷.',
+  },
+  mamitalk: {
+    key: 'mamitalk',
+    label: '마미톡',
+    type: 'channel_id',
+    description: '마미톡. 매출·주문은 사방넷.',
+  },
+  benefia: {
+    key: 'benefia',
+    label: '베네피아',
+    type: 'channel_id',
+    description: '베네피아. 매출·주문은 사방넷.',
+  },
+  mallpie: {
+    key: 'mallpie',
+    label: 'Mallpie',
+    type: 'channel_id',
+    description: 'Mallpie. 매출·주문은 사방넷.',
+  },
+  lottehome: {
+    key: 'lottehome',
+    label: '롯데홈쇼핑',
+    type: 'channel_id',
+    description: '롯데홈쇼핑. 매출·주문은 사방넷.',
+  },
+  gmarket: {
+    key: 'gmarket',
+    label: 'ESM지마켓',
+    type: 'channel_id',
+    description: 'ESM 지마켓. 매출·주문은 사방넷.',
+  },
+  shinsegae: {
+    key: 'shinsegae',
+    label: '신세계몰',
+    type: 'channel_id',
+    description: '신세계몰. 매출·주문은 사방넷.',
+  },
+  homeandshopping: {
+    key: 'homeandshopping',
+    label: '홈&쇼핑',
+    type: 'channel_id',
+    description: '홈&쇼핑. 매출·주문은 사방넷.',
+  },
+  musinsa: {
+    key: 'musinsa',
+    label: '무신사',
+    type: 'channel_id',
+    description: '무신사. 매출·주문은 사방넷.',
+  },
+  ably: {
+    key: 'ably',
+    label: '에이블리',
+    type: 'channel_id',
+    description: '에이블리. 매출·주문은 사방넷.',
+  },
+  halfclub: {
+    key: 'halfclub',
+    label: '하프클럽',
+    type: 'channel_id',
+    description: '하프클럽. 매출·주문은 사방넷.',
   },
   instagram: {
     key: 'instagram',
@@ -227,6 +335,13 @@ export function keysForSource(source?: string): FieldKeyDef[] {
 
   if (source === 'naver_sa') {
     return [...common, ...Object.values(NAVER_SA_EXTRA_KEYS)]
+  }
+  if (source === 'sabangnet' || source === 'pluscl') {
+    return [
+      ...common,
+      SNAPSHOT_KEYS.sales,
+      SNAPSHOT_KEYS.orders,
+    ].filter((item): item is FieldKeyDef => Boolean(item))
   }
   if (source === 'coupang') {
     return [

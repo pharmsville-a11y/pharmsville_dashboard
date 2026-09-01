@@ -48,13 +48,14 @@ Deno.serve(async (request) => {
   let query = supabase
     .from("channel_snapshots")
     .select(
-      "snapshot_date, channel_id, kind, source, sales, orders, conversion_rate, ad_spend, followers, reach, engagement_rate, extra, captured_at",
+      "snapshot_date, snapshot_hour, channel_id, kind, source, sales, orders, conversion_rate, ad_spend, followers, reach, engagement_rate, extra, captured_at",
     )
     .eq("company_id", COMPANY_ID)
     .eq("period", "daily")
     .gte("snapshot_date", from)
     .lte("snapshot_date", to)
     .order("snapshot_date", { ascending: true })
+    .order("snapshot_hour", { ascending: true })
     .limit(5000);
 
   if (channelIds.length > 0) {

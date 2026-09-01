@@ -16,6 +16,37 @@ export function parseYmd(value: unknown): string | null {
   return match?.[1] ?? null
 }
 
+/** 날짜를 한국 기준 YYYY-MM-DD 로. Date/ISO/영문 시각 문자열도 처리. */
+export function formatKstYmd(value: unknown): string {
+  if (value == null || value === '') return ''
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return ''
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(value)
+  }
+  const raw = String(value).trim()
+  if (!raw) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+  const extracted = parseYmd(raw)
+  if (extracted) return extracted
+  const compact = raw.replace(/\D/g, '')
+  if (/^\d{8}$/.test(compact) && !/[A-Za-z]/.test(raw)) {
+    return `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`
+  }
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return raw
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(parsed)
+}
+
 export function kstDateFromYmd(ymd: string): Date {
   const normalized = parseYmd(ymd)
   if (!normalized) return new Date()
@@ -53,6 +84,13 @@ export function kstDaysBetween(from: string, to: string): number {
   const start = kstDateFromYmd(from).getTime()
   const end = kstDateFromYmd(to).getTime()
   return Math.round((end - start) / 86_400_000)
+}
+
+/** 유통기한까지 남은 일수. 오늘 기준 KST. 만료 시 음수. */
+export function remainingDaysFromExpire(expire: string | null | undefined, today = kstYmd()): number | null {
+  const ymd = expire ? parseYmd(expire) ?? (formatKstYmd(expire) || null) : null
+  if (!ymd) return null
+  return kstDaysBetween(today, ymd)
 }
 
 const KST: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Seoul' }
@@ -110,6 +148,36 @@ export function msUntilNextKstHour(date = new Date(), extraMs = 0): number {
   next.setMinutes(0, 0, 0)
   next.setHours(next.getHours() + 1)
   return Math.max(250, next.getTime() - kst.getTime() + extraMs)
+}
+
+/** 매시 collect 완료 시각(:02 daily, :05 pluscl) 이후까지 남은 ms. */
+export function msUntilNextKstCollect(
+  date = new Date(),
+  minute = 5,
+  extraMs = 0,
+): number {
+  const kst = kstWallClock(date)
+  const next = new Date(kst.getTime())
+  next.setSeconds(0, 0)
+  next.setMinutes(minute)
+  let target = next.getTime() + extraMs
+  if (kst.getTime() >= target) {
+    next.setHours(next.getHours() + 1)
+    target = next.getTime() + extraMs
+  }
+  return Math.max(250, target - kst.getTime())
+}
+
+/** 이번 시 수집(:05 + grace)이 끝났는지. */
+export function isPastKstCollect(
+  date = new Date(),
+  minute = 5,
+  graceMs = 0,
+): boolean {
+  const kst = kstWallClock(date)
+  const elapsed =
+    kst.getMinutes() * 60_000 + kst.getSeconds() * 1000 + kst.getMilliseconds()
+  return elapsed >= minute * 60_000 + graceMs
 }
 
 export function kstIsoAt(ymd: string, hour: number): string {

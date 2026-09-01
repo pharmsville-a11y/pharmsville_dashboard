@@ -70,6 +70,28 @@ export function formatTooltipTime(iso: string): string {
   return `${date} ${time}`
 }
 
+export function formatSabangnetDateTime(value: unknown): { date: string; time: string; raw: string } {
+  const raw = String(value ?? '').trim()
+  if (!raw) return { date: '', time: '', raw: '' }
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length >= 14) {
+    return {
+      date: `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`,
+      time: `${digits.slice(8, 10)}:${digits.slice(10, 12)}:${digits.slice(12, 14)}`,
+      raw,
+    }
+  }
+  if (digits.length >= 8) {
+    const date = `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`
+    const rest = raw.slice(raw.search(/\d{8}/) + 8).trim()
+    const timeMatch = rest.match(/(\d{1,2}:\d{2}(?::\d{2})?)/)
+    return { date, time: timeMatch?.[1] ?? '', raw }
+  }
+  const iso = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)/)
+  if (iso) return { date: iso[1], time: iso[2], raw }
+  return { date: raw, time: '', raw }
+}
+
 export function formatHoursLabel(hours: number[] | null | undefined): string {
   if (!hours?.length) return '전체 시간'
   const sorted = [...new Set(hours)].sort((left, right) => left - right)

@@ -4,29 +4,14 @@ import { CalendarRange, ChevronDown, ChevronLeft, ChevronRight, Clock, X } from 
 import { RANGE_KEYS, RANGE_LABELS, lookupFromRangeKey } from '../../adapters/utils'
 import { cx } from '../../lib/cx'
 import { formatHoursLabel, formatLookupPeriod, hoursFromSpan, isHourSpan } from '../../lib/format'
+import { buildMonthCells, isSundayYmd, WEEKDAYS_SUN_FIRST } from '../../lib/calendarGrid'
+import { krPublicHolidayName } from '../../lib/krHolidays'
 import { kstDateFromYmd, kstYmd, shiftYmdMonth, ymdMonthStart } from '../../lib/kst'
 import './SnapshotLookup.css'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 type HourMode = 'all' | 'span' | 'pick'
-
-function monthCells(monthStart: string): Array<string | null> {
-  const first = kstDateFromYmd(monthStart)
-  const weekday = first.getUTCDay()
-  const cells: Array<string | null> = Array.from({ length: weekday }, () => null)
-  const year = monthStart.slice(0, 4)
-  const month = monthStart.slice(5, 7)
-  for (let day = 1; day <= 31; day += 1) {
-    const ymd = `${year}-${month}-${String(day).padStart(2, '0')}`
-    const date = kstDateFromYmd(ymd)
-    if (date.getUTCMonth() + 1 !== Number(month)) break
-    cells.push(ymd)
-  }
-  while (cells.length % 7 !== 0) cells.push(null)
-  return cells
-}
 
 function formatFieldDate(ymd: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -153,7 +138,7 @@ export function SnapshotLookup({
 
   const today = maxDate ?? kstYmd()
   const known = useMemo(() => new Set(availableHours), [availableHours])
-  const cells = useMemo(() => monthCells(cursor), [cursor])
+  const cells = useMemo(() => buildMonthCells(cursor), [cursor])
   const monthLabel = useMemo(
     () =>
       new Intl.DateTimeFormat('ko-KR', {
@@ -310,33 +295,48 @@ export function SnapshotLookup({
                     </button>
                   </div>
                   <div className="lookup-cal__week">
-                    {WEEKDAYS.map((day) => (
-                      <span key={day}>{day}</span>
+                    {WEEKDAYS_SUN_FIRST.map((day, index) => (
+                      <span key={day} className={cx(index === 0 && 'is-sun')}>
+                        {day}
+                      </span>
                     ))}
                   </div>
                   <div className="lookup-cal__grid">
-                    {cells.map((day, index) => {
-                      if (!day) return <span key={`empty-${index}`} />
+                    {cells.map((cell) => {
+                      const day = cell.ymd
                       const disabled = Boolean((minDate && day < minDate) || (maxDate && day > maxDate))
                       const inRange = day >= draftFrom && day <= draftTo
                       const isStart = day === draftFrom
                       const isEnd = day === draftTo
+                      const holidayName = krPublicHolidayName(day)
+                      const isHoliday = Boolean(holidayName)
+                      const isSunday = isSundayYmd(day)
                       return (
-                        <button
+                        <span
                           key={day}
-                          type="button"
-                          disabled={disabled}
                           className={cx(
-                            'lookup-cal__day',
+                            'lookup-cal__cell',
                             inRange && 'is-in',
                             isStart && 'is-start',
                             isEnd && 'is-end',
-                            day === today && 'is-today',
                           )}
-                          onClick={() => pickDay(day)}
                         >
-                          {Number(day.slice(8))}
-                        </button>
+                          <button
+                            type="button"
+                            disabled={disabled}
+                            title={holidayName ?? undefined}
+                            className={cx(
+                              'lookup-cal__day',
+                              cell.inMonth && 'is-month',
+                              (isStart || isEnd) && 'is-selected',
+                              day === today && 'is-today',
+                              (isHoliday || isSunday) && 'is-holiday',
+                            )}
+                            onClick={() => pickDay(day)}
+                          >
+                            {Number(day.slice(8))}
+                          </button>
+                        </span>
                       )
                     })}
                   </div>
@@ -423,6 +423,43 @@ export function SnapshotLookup({
                 </div>
 
                 <footer className="lookup-modal__foot">
+                  <div className="lookup-modal__presets-foot">
+                    <button
+                      type="button"
+                      className="lookup-modal__today"
+                      disabled={Boolean(minDate && today < minDate)}
+                      onClick={() => {
+                        setDraftFrom(today)
+                        setDraftTo(today)
+                        setCursor(ymdMonthStart(today))
+                      }}
+                    >
+                      오늘
+                    </button>
+                    {(
+                      [
+                        [7, '1주일'],
+                        [30, '1개월'],
+                        [90, '3개월'],
+                        [180, '6개월'],
+                      ] as const
+                    ).map(([days, label]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        className="lookup-modal__today"
+                        onClick={() => {
+                          const start = kstYmd(kstDateFromYmd(today), -(days - 1))
+                          const fromDay = minDate && start < minDate ? minDate : start
+                          setDraftFrom(fromDay)
+                          setDraftTo(today)
+                          setCursor(ymdMonthStart(today))
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                   <p>
                     {formatLookupPeriod(draftFrom, draftTo)} · {formatHoursLabel(draftHours)}
                   </p>

@@ -1,4 +1,5 @@
 import type { AllowedChannels, AppUser, Role } from './types'
+import { sha256Hex } from './sha256'
 
 export const SEED_ACCOUNTS: AppUser[] = [
   {
@@ -58,9 +59,7 @@ export function assertPassword(value: string): string {
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  const data = new TextEncoder().encode(password)
-  const digest = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return sha256Hex(password)
 }
 
 export async function passwordsMatch(password: string, passwordHash: string): Promise<boolean> {
@@ -76,8 +75,8 @@ export function initialsFromName(name: string): string {
   return name.slice(0, 2).toUpperCase()
 }
 
-export function displayName(user: Pick<AppUser, 'name' | 'nickname'>): string {
-  return user.nickname?.trim() || user.name
+export function displayName(user: Pick<AppUser, 'name'>): string {
+  return user.name
 }
 
 export function createAccountRecord(input: {
@@ -86,21 +85,18 @@ export function createAccountRecord(input: {
   name: string
   role: Role
   allowedChannels: AllowedChannels
-  nickname?: string
   note?: string
 }): AppUser {
   const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
   const name = input.name.trim()
-  const nickname = input.nickname?.trim()
   const note = input.note?.trim()
   return {
     id,
     loginId: input.loginId,
     passwordHash: input.passwordHash,
     name,
-    nickname: nickname || undefined,
     title: input.role === 'admin' ? '최고관리자' : input.role === 'master' ? '대표·총괄' : '내부 마케터',
-    initials: initialsFromName(nickname || name),
+    initials: initialsFromName(name),
     role: input.role,
     allowedChannels: input.allowedChannels,
     note: note || undefined,

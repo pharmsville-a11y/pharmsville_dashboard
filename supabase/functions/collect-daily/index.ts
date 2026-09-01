@@ -4,7 +4,8 @@ const COMPANY_ID = "internal";
 
 /**
  * 광고 수집 스위치. 프론트 src/ads/catalog.ts 와 맞출 것.
- * 판매 채널은 사방넷 예정이라 여기서 모으지 않는다.
+ * 쿠팡 윙 실측 비용은 collectCoupang → ad_snapshots (검색광고 광고비).
+ * 판매 채널 매출·주문은 사방넷 API 3.0 (collectSabangnet). 물류는 collect-pluscl cron.
  */
 const AD_COLLECTORS: Record<string, { enabled: boolean }> = {
   naver: { enabled: true },
@@ -15,6 +16,7 @@ const AD_COLLECTORS: Record<string, { enabled: boolean }> = {
 type SnapshotInsert = {
   company_id: string;
   snapshot_date: string;
+  snapshot_hour: number;
   period: "daily";
   channel_id: string;
   kind: "commerce" | "sns";
@@ -27,6 +29,7 @@ type SnapshotInsert = {
   reach: number | null;
   engagement_rate: number | null;
   extra: Record<string, unknown>;
+  captured_at: string;
 };
 
 function isAdCollectorEnabled(id: string) {
@@ -145,44 +148,195 @@ function readCoupangAccounts(): CoupangAccount[] {
   return accounts;
 }
 
-async function fetchCoupangDay(account: CoupangAccount, date: string) {
+function coupangMoney(value: unknown): number {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const row = value as Record<string, unknown>;
+    const units = Number(row.units ?? 0);
+    const nanos = Number(row.nanos ?? 0);
+    return (Number.isFinite(units) ? units : 0) + (Number.isFinite(nanos) ? nanos / 1e9 : 0);
+  }
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function coupangSheetSales(sheet: Record<string, unknown>): number {
+  const items = Array.isArray(sheet.orderItems) ? sheet.orderItems : [];
+  if (items.length > 0) {
+    let sum = 0;
+    for (const item of items) {
+      if (!item || typeof item !== "object") continue;
+      const row = item as Record<string, unknown>;
+      if (row.canceled === true) continue;
+      const qty = Number(row.shippingCount ?? 0) - Number(row.cancelCount ?? 0) - Number(row.holdCountForCancel ?? 0);
+      if (qty <= 0) continue;
+      const line = coupangMoney(row.orderPrice);
+      sum += line || coupangMoney(row.salesPrice) * qty;
+    }
+    return sum;
+  }
+  return coupangMoney(sheet.orderPrice ?? sheet.paidPrice ?? sheet.totalPrice);
+}
+
+function isCancelledCoupangSheet(sheet: Record<string, unknown>): boolean {
+  const status = String(sheet.status ?? "").toUpperCase();
+  return status === "CANCEL" || status.includes("CANCEL");
+}
+
+/** Wing PO 상태. DELIVERY_WAITING 은 사방넷 표기이며 Wing 쿼리 파라미터가 아니다. */
+const COUPANG_PO_STATUSES = [
+  "ACCEPT",
+  "INSTRUCT",
+  "DEPARTURE",
+  "DELIVERING",
+  "FINAL_DELIVERY",
+  "NONE_TRACKING",
+] as const;
+
+const COUPANG_REQUEST_GAP_MS = 800;
+const COUPANG_PAGE_GAP_MS = 350;
+const COUPANG_MAX_RETRIES = 4;
+const COUPANG_RETRY_BASE_MS = 2_000;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function coupangDayQuery(date: string, status?: string) {
+  const range = `createdAtFrom=${date}%2B09:00&createdAtTo=${date}%2B09:00&maxPerPage=50`;
+  return status ? `${range}&status=${status}` : range;
+}
+
+function retryAfterMs(response: Response, attempt: number) {
+  const header = response.headers.get("retry-after");
+  const parsed = header ? Number(header) : Number.NaN;
+  if (Number.isFinite(parsed) && parsed > 0) return parsed * 1000;
+  return COUPANG_RETRY_BASE_MS * 2 ** attempt;
+}
+
+async function fetchCoupangOrdersheets(
+  account: CoupangAccount,
+  date: string,
+  status?: string,
+): Promise<
+  | { ok: true; sheets: Record<string, unknown>[] }
+  | { ok: false; reason: string; status?: number; message: string }
+> {
   const method = "GET";
-  const path = `/v2/providers/openapi/apis/api/v4/vendors/${account.vendorId}/ordersheets`;
-  const query = `createdAtFrom=${date}T00:00&createdAtTo=${date}T23:59&maxPerPage=50`;
-  const datetime = coupangDatetime();
-  const signature = await hmacSha256Hex(account.secretKey, `${datetime}${method}${path}${query}`);
-  const authorization =
-    `CEA algorithm=HmacSHA256, access-key=${account.accessKey}, signed-date=${datetime}, signature=${signature}`;
+  const path = `/v2/providers/openapi/apis/api/v5/vendors/${account.vendorId}/ordersheets`;
+  const sheets: Record<string, unknown>[] = [];
+  let nextToken = "";
 
-  const response = await fetch(`https://api-gateway.coupang.com${path}?${query}`, {
-    method,
-    headers: {
-      Authorization: authorization,
-      "Content-Type": "application/json;charset=UTF-8",
-      "X-Requested-By": account.vendorId,
-    },
-  });
+  for (let page = 0; page < 40; page += 1) {
+    if (page > 0) await sleep(COUPANG_PAGE_GAP_MS);
 
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
+    const query =
+      coupangDayQuery(date, status) +
+      (nextToken ? `&nextToken=${encodeURIComponent(nextToken)}` : "");
+
+    let response: Response | null = null;
+    let body: unknown = null;
+    for (let attempt = 0; attempt <= COUPANG_MAX_RETRIES; attempt += 1) {
+      const datetime = coupangDatetime();
+      const signature = await hmacSha256Hex(account.secretKey, `${datetime}${method}${path}${query}`);
+      const authorization =
+        `CEA algorithm=HmacSHA256, access-key=${account.accessKey}, signed-date=${datetime}, signature=${signature}`;
+
+      response = await fetch(`https://api-gateway.coupang.com${path}?${query}`, {
+        method,
+        headers: {
+          Authorization: authorization,
+          "Content-Type": "application/json;charset=UTF-8",
+          "X-Requested-By": account.vendorId,
+          "X-MARKET": "KR",
+        },
+      });
+      body = await response.json().catch(() => null);
+
+      if (response.status !== 429 || attempt >= COUPANG_MAX_RETRIES) break;
+      await sleep(retryAfterMs(response, attempt));
+    }
+
+    if (!response?.ok) {
+      return {
+        ok: false,
+        reason: "http-error",
+        status: response?.status,
+        message: apiErrorMessage(body, "coupang request failed"),
+      };
+    }
+
+    const data = Array.isArray((body as { data?: unknown })?.data)
+      ? ((body as { data: unknown[] }).data)
+      : [];
+    for (const sheet of data) {
+      if (sheet && typeof sheet === "object") sheets.push(sheet as Record<string, unknown>);
+    }
+
+    const token =
+      typeof (body as { nextToken?: unknown })?.nextToken === "string" &&
+      (body as { nextToken: string }).nextToken
+        ? (body as { nextToken: string }).nextToken
+        : typeof (body as { next?: unknown })?.next === "string" && (body as { next: string }).next
+          ? (body as { next: string }).next
+          : "";
+    if (!token || data.length === 0) break;
+    nextToken = token;
+  }
+
+  return { ok: true, sheets };
+}
+
+function aggregateCoupangSheets(sheets: Record<string, unknown>[]) {
+  const seen = new Set<string>();
+  let sales = 0;
+  let orders = 0;
+  for (const sheet of sheets) {
+    const id = String(sheet.shipmentBoxId ?? sheet.orderId ?? "");
+    if (id && seen.has(id)) continue;
+    if (id) seen.add(id);
+    if (isCancelledCoupangSheet(sheet)) continue;
+    orders += 1;
+    sales += coupangSheetSales(sheet);
+  }
+  return { sales, orders, rawCount: sheets.length };
+}
+
+async function fetchCoupangDay(account: CoupangAccount, date: string) {
+  const errors: string[] = [];
+  const merged = new Map<string, Record<string, unknown>>();
+
+  for (let index = 0; index < COUPANG_PO_STATUSES.length; index += 1) {
+    const status = COUPANG_PO_STATUSES[index]!;
+    if (index > 0) await sleep(COUPANG_REQUEST_GAP_MS);
+    const page = await fetchCoupangOrdersheets(account, date, status);
+    if (!page.ok) {
+      errors.push(`${status}(${page.status ?? page.reason}): ${page.message}`);
+      continue;
+    }
+    for (const sheet of page.sheets) {
+      const id = String(sheet.shipmentBoxId ?? sheet.orderId ?? `row-${merged.size}`);
+      merged.set(id, sheet);
+    }
+  }
+
+  if (merged.size === 0 && errors.length >= COUPANG_PO_STATUSES.length) {
+    const last = errors.at(-1) ?? "coupang request failed";
+    const statusMatch = last.match(/\((\d{3})\)/);
     return {
       ok: false as const,
       reason: "http-error",
-      status: response.status,
-      message: apiErrorMessage(body, "coupang request failed"),
+      status: statusMatch ? Number(statusMatch[1]) : 429,
+      message: last,
     };
   }
 
-  const data = Array.isArray(body?.data) ? body.data : [];
-  let sales = 0;
-  let orders = 0;
-  for (const sheet of data) {
-    orders += 1;
-    const price = Number(sheet?.orderPrice ?? sheet?.paidPrice ?? sheet?.totalPrice ?? 0);
-    if (!Number.isNaN(price)) sales += price;
-  }
-
-  return { ok: true as const, sales, orders, rawCount: data.length };
+  const totals = aggregateCoupangSheets([...merged.values()]);
+  return {
+    ok: true as const,
+    ...totals,
+    errors,
+    partial: errors.length > 0,
+  };
 }
 
 type NaverSaAccount = {
@@ -781,7 +935,12 @@ type AdInsert = {
   conversions: number;
   conv_amt: number;
   extra: Record<string, unknown>;
+  captured_at: string;
 };
+
+function capturedNow(): string {
+  return new Date().toISOString();
+}
 
 function serializeCampaign(campaign: CampaignRef) {
   return {
@@ -828,6 +987,7 @@ function adRow(date: string, product: "sa" | "da", metrics: AdMetrics): AdInsert
     clicks: metrics.clkCnt,
     conversions: metrics.ccnt,
     conv_amt: metrics.convAmt,
+    captured_at: capturedNow(),
     extra: {
       campaign_count: metrics.campaignCount,
       campaign_types: metrics.campaignTypes,
@@ -847,6 +1007,7 @@ function adToChannelCompat(row: AdInsert): SnapshotInsert {
   return {
     company_id: row.company_id,
     snapshot_date: row.snapshot_date,
+    snapshot_hour: row.snapshot_hour,
     period: "daily",
     channel_id: `${row.platform}_${row.product}`,
     kind: "commerce",
@@ -869,6 +1030,7 @@ function adToChannelCompat(row: AdInsert): SnapshotInsert {
       campaign_count: row.extra.campaign_count,
       campaign_types: row.extra.campaign_types,
     },
+    captured_at: row.captured_at,
   };
 }
 
@@ -915,41 +1077,32 @@ async function collectNaverAds(date: string): Promise<{ rows: AdInsert[]; notes:
   return { notes, rows: [adRow(date, "sa", sa), adRow(date, "da", da)] };
 }
 
-async function collectCoupang(date: string): Promise<{ rows: SnapshotInsert[]; notes: string[] }> {
+async function collectCoupang(date: string): Promise<{ rows: AdInsert[]; notes: string[] }> {
   const notes: string[] = [];
-  const rows: SnapshotInsert[] = [];
+  const rows: AdInsert[] = [];
   const accounts = readCoupangAccounts();
   if (accounts.length === 0) {
-    notes.push("켜 둔 쿠팡 채널에 계정 시크릿이 없습니다.");
+    notes.push("켜 둔 쿠팡 계정 시크릿이 없습니다.");
     return { rows, notes };
   }
+
+  let spend = 0;
+  let live = false;
+  const labels: string[] = [];
 
   for (const account of accounts) {
     try {
       const coupang = await fetchCoupangDay(account, date);
       if (coupang.ok) {
-        rows.push({
-          company_id: COMPANY_ID,
-          snapshot_date: date,
-          period: "daily",
-          channel_id: account.channelId,
-          kind: "commerce",
-          source: "coupang",
-          sales: coupang.sales,
-          orders: coupang.orders,
-          conversion_rate: null,
-          ad_spend: null,
-          followers: null,
-          reach: null,
-          engagement_rate: null,
-          extra: {
-            label: account.label,
-            vendor_id: account.vendorId,
-          },
-        });
+        live = true;
+        spend += coupang.sales;
+        labels.push(account.label);
         notes.push(
-          `${account.channelId} (${account.label}) live: sales=${coupang.sales}, orders=${coupang.orders}`,
+          `${account.channelId} (${account.label}) Wing 실측: ad_spend=${coupang.sales}, orders=${coupang.orders}, sheets=${coupang.rawCount}`,
         );
+        if (coupang.partial && coupang.errors.length > 0) {
+          notes.push(`${account.channelId} 부분 수집(429 등): ${coupang.errors.join("; ")}`);
+        }
       } else {
         notes.push(
           `${account.channelId} 호출 실패(${coupang.status ?? coupang.reason}): ${coupang.message}`,
@@ -962,6 +1115,27 @@ async function collectCoupang(date: string): Promise<{ rows: SnapshotInsert[]; n
     }
   }
 
+  if (live) {
+    rows.push({
+      company_id: COMPANY_ID,
+      snapshot_date: date,
+      snapshot_hour: snapshotHourForDate(date),
+      period: "daily",
+      platform: "coupang",
+      product: "sa",
+      source: "coupang_ads",
+      ad_spend: spend,
+      impressions: 0,
+      clicks: 0,
+      conversions: 0,
+      conv_amt: 0,
+      captured_at: capturedNow(),
+      extra: {
+        labels,
+      },
+    });
+  }
+
   return { rows, notes };
 }
 
@@ -969,7 +1143,7 @@ async function collectEnabled(date: string) {
   const notes: string[] = [];
   const rows: AdInsert[] = [];
   const skipped = Object.entries(AD_COLLECTORS)
-    .filter(([, meta]) => !meta.enabled)
+    .filter(([id, meta]) => !meta.enabled && id !== "coupang")
     .map(([id]) => id);
 
   if (isAdCollectorEnabled("naver")) {
@@ -982,8 +1156,43 @@ async function collectEnabled(date: string) {
     notes.push(`광고 수집 안 함(대기): ${skipped.join(", ")}`);
   }
 
-  notes.push("판매 채널은 사방넷 연동 후 channel_snapshots 에 저장합니다.");
+  notes.push("쿠팡 실측 비용은 collectCoupang 이 ad_snapshots(검색광고)에 저장합니다.");
+  notes.push("판매 채널 매출·주문은 collect-sabangnet 이 channel_snapshots 에 저장합니다.");
   return { notes, rows };
+}
+
+async function invokeSabangnet(dates: string[], secret: string | null, notes: string[]) {
+  if (!Deno.env.get("SABANGNET_CLIENT_CD")?.trim() || !Deno.env.get("SABANGNET_SECRET")?.trim()) {
+    notes.push("사방넷 키가 없어 매출 수집을 건너뜁니다.");
+    return;
+  }
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+  if (!supabaseUrl) {
+    notes.push("사방넷 수집 URL을 만들지 못했습니다.");
+    return;
+  }
+  for (const date of dates) {
+    try {
+      const target = new URL(`${supabaseUrl}/functions/v1/collect-sabangnet`);
+      target.searchParams.set("date", date);
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (secret) headers["x-collect-secret"] = secret;
+      const response = await fetch(target, { method: "POST", headers, body: "{}" });
+      const body = (await response.json().catch(() => null)) as {
+        ok?: boolean
+        error?: string
+        rows?: number
+        order_rows?: number
+        notes?: string[]
+      } | null;
+      notes.push(
+        `사방넷 ${date}: ${body?.ok ? "ok" : body?.error ?? `http ${response.status}`} rows=${body?.rows ?? 0} orders=${body?.order_rows ?? 0}`,
+      );
+      if (Array.isArray(body?.notes)) notes.push(...body.notes);
+    } catch (error) {
+      notes.push(`사방넷 ${date} 호출 실패: ${error instanceof Error ? error.message : "error"}`);
+    }
+  }
 }
 
 Deno.serve(async (request) => {
@@ -1012,42 +1221,56 @@ Deno.serve(async (request) => {
   const supabase = createClient(supabaseUrl, serviceKey);
   const notes: string[] = [];
   const rows: AdInsert[] = [];
+  const commerceRows: SnapshotInsert[] = [];
 
   for (const date of dates) {
     const collected = await collectEnabled(date);
     notes.push(`--- ${date} ---`, ...collected.notes);
     rows.push(...collected.rows);
+
+    const coupang = await collectCoupang(date);
+    notes.push(...coupang.notes);
+    rows.push(...coupang.rows);
   }
 
-  if (rows.length === 0) {
+  const collectSecret = request.headers.get("x-collect-secret");
+  await invokeSabangnet(dates, collectSecret, notes);
+
+  if (rows.length === 0 && commerceRows.length === 0) {
     return json({
       ok: true,
       snapshot_date: dates.at(-1),
       snapshot_dates: dates,
       rows: 0,
+      channel_rows: 0,
       sources: {},
-      notes: [...notes, "실측 광고 행이 없어 DB에 쓰지 않았습니다."],
+      notes: [...notes, "실측 행이 없어 DB에 쓰지 않았습니다."],
     });
   }
 
-  const adWrite = await supabase.from("ad_snapshots").upsert(rows, {
-    onConflict: "company_id,platform,product,snapshot_date,snapshot_hour,period",
-  });
-  if (adWrite.error) {
-    notes.push(`ad_snapshots 저장 실패: ${adWrite.error.message}. 003_ad_snapshots.sql 을 실행했는지 확인하세요.`);
+  if (rows.length > 0) {
+    const adWrite = await supabase.from("ad_snapshots").upsert(rows, {
+      onConflict: "company_id,platform,product,snapshot_date,snapshot_hour,period",
+    });
+    if (adWrite.error) {
+      notes.push(`ad_snapshots 저장 실패: ${adWrite.error.message}. 003_ad_snapshots.sql 을 실행했는지 확인하세요.`);
+    }
+    commerceRows.push(...rows.map(adToChannelCompat));
   }
 
-  const compat = rows.map(adToChannelCompat);
-  const channelWrite = await supabase.from("channel_snapshots").upsert(compat, {
-    onConflict: "company_id,channel_id,snapshot_date,period",
-  });
-  if (channelWrite.error) return json({ error: channelWrite.error.message, notes }, 500);
+  if (commerceRows.length > 0) {
+    const channelWrite = await supabase.from("channel_snapshots").upsert(commerceRows, {
+      onConflict: "company_id,channel_id,snapshot_date,snapshot_hour,period",
+    });
+    if (channelWrite.error) return json({ error: channelWrite.error.message, notes }, 500);
+  }
 
   return json({
     ok: true,
     snapshot_date: dates.at(-1),
     snapshot_dates: dates,
     rows: rows.length,
+    channel_rows: commerceRows.length,
     sources: Object.fromEntries(rows.map((row) => [`${row.platform}_${row.product}`, row.source])),
     notes,
   });

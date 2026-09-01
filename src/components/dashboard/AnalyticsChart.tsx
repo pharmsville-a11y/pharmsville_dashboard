@@ -53,6 +53,7 @@ export function AnalyticsChart({
   refreshing = false,
   title = '통합 성과',
   highlightTime,
+  action,
   lookup,
 }: {
   series: TimePoint[]
@@ -60,6 +61,7 @@ export function AnalyticsChart({
   refreshing?: boolean
   title?: string
   highlightTime?: string
+  action?: ReactNode
   lookup?: ReactNode
 }) {
   const chartData = useMemo(
@@ -70,7 +72,10 @@ export function AnalyticsChart({
   return (
     <section className="analytics">
       <div className="analytics__head">
-        <h2>{title}</h2>
+        <div className="analytics__head-copy">
+          <h2>{title}</h2>
+          {action}
+        </div>
         {lookup}
       </div>
       <div className={cx('analytics__chart', refreshing && 'is-refreshing')}>

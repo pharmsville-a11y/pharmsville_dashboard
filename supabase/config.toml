@@ -9,3 +9,12 @@ verify_jwt = false
 
 [functions.query-ads]
 verify_jwt = false
+
+[functions.collect-pluscl]
+verify_jwt = false
+
+[functions.collect-sabangnet]
+verify_jwt = false
+
+[functions.query-pluscl]
+verify_jwt = false

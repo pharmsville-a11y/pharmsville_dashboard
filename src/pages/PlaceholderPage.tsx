@@ -3,16 +3,15 @@ import type { PageId } from '../components/layout/types'
 import { usePageReady } from '../hooks/usePageReady'
 import './PlaceholderPage.css'
 
-export type PlaceholderPageId = Exclude<PageId, 'dashboard' | 'accounts' | 'marketing'>
+export type PlaceholderPageId = Exclude<
+  PageId,
+  'dashboard' | 'accounts' | 'marketing' | 'commerce' | 'stock' | 'menu' | 'pagetest' | 'devlab' | 'apicheck'
+>
 
 const COPY: Record<PlaceholderPageId, { title: string; body: string }> = {
   channels: {
     title: '채널 현황',
     body: '채널별 상세 지표와 연결 상태는 다음 단계에서 붙입니다.',
-  },
-  commerce: {
-    title: '매출·주문',
-    body: '쇼핑 채널 주문/매출 리포트 자리를 마련해 두었습니다.',
   },
   settlement: {
     title: '정산',

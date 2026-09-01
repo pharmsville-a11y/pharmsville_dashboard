@@ -27,6 +27,7 @@ jobs:
       - run: npm run build
         env:
           VITE_QUERY_URL: https://ylpwlxwnhqozthnfdvfm.supabase.co/functions/v1/query-ads
+          VITE_PLUSCL_URL: https://ylpwlxwnhqozthnfdvfm.supabase.co/functions/v1/query-pluscl
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -72,13 +72,12 @@ interface AuthState {
     name: string
     role: Role
     allowedChannels: AllowedChannels
-    nickname?: string
     note?: string
   }) => Promise<AppUser>
   grantRole: (userId: string, role: Role) => void
   updateAccount: (
     userId: string,
-    patch: { nickname?: string; note?: string; password?: string },
+    patch: { name?: string; note?: string; password?: string },
   ) => Promise<void>
   deleteAccount: (userId: string) => void
 }
@@ -167,15 +166,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         const passwordHash = patch.password ? await hashPassword(assertPassword(patch.password)) : undefined
         function nextAccount(account: AppUser): AppUser {
-          const nextNickname =
-            patch.nickname === undefined ? account.nickname : patch.nickname.length ? patch.nickname : undefined
+          const nextName = patch.name === undefined ? account.name : patch.name.trim()
           const nextNote = patch.note === undefined ? account.note : patch.note.length ? patch.note : undefined
           return {
             ...account,
-            nickname: nextNickname,
+            name: nextName || account.name,
             note: nextNote,
             passwordHash: passwordHash ?? account.passwordHash,
-            initials: initialsFromName(nextNickname?.trim() || account.name),
+            initials: initialsFromName(nextName || account.name),
           }
         }
         setAccounts((current) =>

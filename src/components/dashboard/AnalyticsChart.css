@@ -18,6 +18,14 @@
   margin-bottom: 16px;
 }
 
+.analytics__head-copy {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
 .analytics__head h2 {
   margin: 0;
   flex-shrink: 0;

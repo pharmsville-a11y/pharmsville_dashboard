@@ -9,24 +9,22 @@ import { ChannelBadge } from '../ui/ChannelBadge'
 import { Sparkline } from '../ui/Sparkline'
 import './SummaryCards.css'
 
-function spendText(amount: number, live?: boolean) {
-  if (!live) return '대기'
-  return formatWon(amount)
-}
-
 export function SummaryCards({
   totals,
   topChannel,
+  topChannelValue,
   mode = 'sales',
   onOpenMarketing,
 }: {
   totals: DashboardTotals
   topChannel?: ChannelSummary
+  topChannelValue?: number
   mode?: 'sales' | 'ads'
   onOpenMarketing?: () => void
 }) {
   const ads = groupedAdBreakdown(totals.adBreakdown ?? [])
   const topLabel = mode === 'ads' ? '이번 주 톱 광고' : '이번 주 톱 채널'
+  const topValue = topChannelValue ?? topChannel?.primaryValue ?? 0
 
   return (
     <div className="summary">
@@ -69,10 +67,10 @@ export function SummaryCards({
                 <li key={row.platform}>
                   <span className="summary__ad-plat">{row.label}</span>
                   <span>
-                    {AD_PRODUCT_LABEL.sa} {spendText(row.sa?.adSpend ?? 0, row.sa?.live)}
+                    {AD_PRODUCT_LABEL.sa} {formatWon(row.sa?.adSpend ?? 0)}
                   </span>
                   <span>
-                    {AD_PRODUCT_LABEL.da} {spendText(row.da?.adSpend ?? 0, row.da?.live)}
+                    {AD_PRODUCT_LABEL.da} {formatWon(row.da?.adSpend ?? 0)}
                   </span>
                 </li>
               ))}
@@ -90,9 +88,7 @@ export function SummaryCards({
               <div>
                 <p className="summary__top-name">{topChannel.name}</p>
                 <p className="summary__top-value">
-                  {topChannel.kind === 'sns'
-                    ? formatNumber(topChannel.primaryValue)
-                    : formatWon(topChannel.primaryValue)}
+                  {topChannel.kind === 'sns' ? formatNumber(topValue) : formatWon(topValue)}
                 </p>
               </div>
             </div>

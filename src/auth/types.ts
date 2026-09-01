@@ -15,18 +15,19 @@ export type Capability =
   | 'screen.dashboard'
   | 'screen.channels'
   | 'screen.commerce'
+  | 'screen.stock'
   | 'screen.marketing'
   | 'screen.settlement'
   | 'screen.reports'
   | 'screen.tutorial'
   | 'screen.accounts'
+  | 'screen.menu'
 
 export interface AppUser {
   id: string
   loginId: string
   passwordHash: string
   name: string
-  nickname?: string
   title: string
   initials: string
   role: Role
