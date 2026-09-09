@@ -1,17 +1,553 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>채널보드</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
-    />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHARMSVILLE</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&display=swap">
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/footer.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js" defer></script>
+    <script src="js/header.js" defer></script>
+    <script src="js/main.js" defer></script>
+</head>
+<body>
+    <header>
+        <div class="header_inner">
+            <div class="logo"><a href="index.html"><span class="sr_only">PHARMSVILLE</span></a></div>
+            <div class="header_nav">
+                <div class="nav">
+                    <ul>
+                        <li><a href="javascript:void(0);">Company</a></li>
+                        <li><a href="javascript:void(0);">Research &amp; Innovation</a></li>
+                        <li><a href="javascript:void(0);">Brand</a></li>
+                        <li><a href="javascript:void(0);">News</a></li>
+                        <li><a href="javascript:void(0);">Partners</a></li>
+                        <li><a href="javascript:void(0);">Contact Us</a></li>
+                        <li><a href="javascript:void(0);">Recruit</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="util">
+                <ul>
+                    <li class="lang"><a href="#">EN</a></li>
+                    <li class="search"><a href="#"><span class="material-icons">search</span></a></li>
+                </ul>
+            </div>
+            <button type="button" class="menu_btn" aria-label="메뉴">
+                <span class="material-icons">menu</span>
+            </button>
+        </div>
+        <div class="gnb">
+            <div class="gnb_inner">
+                <div class="gnb_depth">
+                    <div class="gnb_tit"><a href="#">Company</a></div>
+                    <ul>
+                        <li><a href="#"><span>회사소개</span></a></li>
+                        <li><a href="#"><span>기업철학</span></a></li>
+                        <li><a href="#"><span>신사옥 소개</span></a></li>
+                        <li><a href="#"><span>인증/수상</span></a></li>
+                        <li><a href="#"><span>연혁</span></a></li>
+                        <li><a href="#"><span>사회공헌</span></a></li>
+                    </ul>
+                </div>
+                <div class="gnb_depth">
+                    <div class="gnb_tit"><a href="#">Research &amp; Innovation</a></div>
+                    <ul>
+                        <li><a href="#"><span>R&amp;D Pipeline</span></a></li>
+                        <li class="sub"><a href="#"><span>R&amp;D</span></a></li>
+                        <li class="sub"><a href="#"><span>Pipeline</span></a></li>
+                        <li><a href="#"><span>Products(Ingredients)</span></a></li>
+                        <li class="sub"><a href="#"><span>ALL</span></a></li>
+                        <li class="sub"><a href="#"><span>Weight Management</span></a></li>
+                        <li class="sub"><a href="#"><span>Enhances Muscle</span></a></li>
+                        <li class="sub"><a href="#"><span>Hangover Relief</span></a></li>
+                        <li class="sub"><a href="#"><span>Joint Management</span></a></li>
+                        <li class="sub"><a href="#"><span>Skin Barrier</span></a></li>
+                        <li><a href="#"><span>Technology &amp; Publications</span></a></li>
+                    </ul>
+                </div>
+                <div class="gnb_depth">
+                    <div class="gnb_tit"><a href="#">Brand</a></div>
+                    <ul>
+                        <li><a href="#"><span>전체브랜드</span></a></li>
+                        <li><a href="#"><span>애플트리김약사네</span></a></li>
+                        <li><a href="#"><span>악마다이어트</span></a></li>
+                        <li><a href="#"><span>애플킨더</span></a></li>
+                        <li><a href="#"><span>애플트리</span></a></li>
+                        <li><a href="#"><span>비타민스토리</span></a></li>
+                        <li><a href="#"><span>닥터솔루션</span></a></li>
+                        <li><a href="#"><span>PS</span></a></li>
+                        <li><a href="#"><span>닥터스앤서</span></a></li>
+                        <li><a href="#"><span>데일리그린</span></a></li>
+                        <li><a href="#"><span>골든가든</span></a></li>
+                        <li><a href="#"><span>상상방</span></a></li>
+                    </ul>
+                </div>
+                <div class="gnb_depth">
+                    <div class="gnb_tit"><a href="#">News</a></div>
+                    <ul>
+                        <li><a href="#"><span>보도자료</span></a></li>
+                        <li><a href="#"><span>PR&amp;NEWS</span></a></li>
+                        <li><a href="#"><span>MEDIA</span></a></li>
+                        <li><a href="#"><span>MODEL ARCHIVE</span></a></li>
+                        <li><a href="#"><span>공고/공시</span></a></li>
+                    </ul>
+                </div>
+                <div class="gnb_depth">
+                    <div class="gnb_tit"><a href="#">Partners</a></div>
+                    <ul>
+                        <li><a href="#"><span>수출 · 제휴문의</span></a></li>
+                    </ul>
+                </div>
+                <div class="gnb_depth">
+                    <div class="gnb_tit"><a href="#">Contact Us</a></div>
+                    <ul>
+                        <li><a href="#"><span>오시는 길</span></a></li>
+                    </ul>
+                </div>
+                <div class="gnb_depth">
+                    <div class="gnb_tit"><a href="#">Recruit</a></div>
+                    <ul>
+                        <li><a href="#"><span>채용정보</span></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="hero">
+            <div class="hero_bg">
+                <video src="video/kv.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+            <div class="hero_copy reveal is_in">
+                <p class="eyebrow">THE 4TH-GENERATION PROBIOTIC</p>
+                <p class="subtit">W. confusa WIKIM51<br>Beyond Probiotics. Toward Metabolic Health.</p>
+            </div>
+        </section>
+
+        <section class="sec_intro">
+            <div class="inner">
+                <div class="intro_head reveal">
+                    <p class="section_tit">대사를 움직이는 보이지 않는 생태계</p>
+                    <p class="section_desc">인체 미생물의 90%가 모여있는 장(Gut), <br>건강의 컨트롤 타워</p>
+                </div>
+                <ul class="stats_grid">
+                    <li class="stat_card reveal">
+                        <span class="stat_kicker">170+ STUDIES</span>
+                        <strong><span data-count="170" data-suffix="개">0개</span></strong>
+                        <p>축적된 연구 논문으로 증명하는 <br>팜스빌의 마이크로바이옴 기술력</p>
+                    </li>
+                    <li class="stat_card reveal d1">
+                        <span class="stat_kicker">10 BILLION CFU</span>
+                        <strong><span data-count="100" data-suffix="억">0억</span></strong>
+                        <p>건강한 균형을 위해 엄선한 <br>프로바이오틱스의 과학</p>
+                    </li>
+                    <li class="stat_card reveal d2">
+                        <span class="stat_kicker">38 TRILLION</span>
+                        <strong><span data-count="38" data-suffix="조">0조</span></strong>
+                        <p>우리 몸과 함께 살아가며 <br>건강과 대사에 관여하는 미생물 수</p>
+                    </li>
+                </ul>
+
+                <div class="intro_split">
+                    <div class="graph_box reveal" data-graph-box>
+                        <div class="graph_viewport" data-echart></div>
+                        <div class="graph_pager">
+                            <button type="button" class="is_on" data-graph-dot="0" aria-label="대사 그래프"></button>
+                            <button type="button" data-graph-dot="1" aria-label="마이크로바이옴 그래프"></button>
+                        </div>
+                    </div>
+                    <div class="graph_copy reveal d1" data-graph-copy>
+                        <p class="section_tag tag" data-copy="tag">METABOLIC</p>
+                        <h3 data-copy="title">나이가 들수록 달라지는 대사</h3>
+                        <p data-copy="desc">연령 증가와 함께 에너지 대사 능력은 변화합니다. 건강한 대사를 유지하는 것은 건강수명과 밀접하게 연결됩니다.</p>
+                        <span data-copy="note">*일생에 걸친 신진대사의 변화</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sec_meta">
+            <div class="meta_pin" data-meta-pin>
+                <div class="meta_space" data-meta-space aria-hidden="true">
+                    <div class="meta_space_layer meta_space_deep" data-space="deep"></div>
+                    <div class="meta_space_layer meta_space_nebula" data-space="nebula"></div>
+                    <div class="meta_space_layer meta_space_glow" data-space="glow"></div>
+                    <div class="meta_space_layer meta_space_stars is_far" data-space="far"></div>
+                    <div class="meta_space_layer meta_space_stars is_mid" data-space="mid"></div>
+                    <div class="meta_space_layer meta_space_stars is_near" data-space="near"></div>
+                    <div class="meta_space_layer meta_space_meteors" data-space="meteors"></div>
+                    <div class="meta_space_veil"></div>
+                </div>
+                <div class="meta_stage">
+                    <!-- <div class="meta_world" data-meta-world>
+                        <img src="images/person_.png" alt="사람 홀로그램">
+                    </div> -->
+                </div>
+                <p class="meta_watermark">Metablism</p>
+                <h2 class="meta_heading">장에서 대사까지.</h2>
+                <h2 class="meta_text">장내 미생물은 영양소를 대사산물로 전환해 전신 대사와 연결됩니다.
+                    팜스빌은 마이크로바이옴 기술로 건강한 대사 균형을 연구합니다.</h2>
+                <div class="meta_copy pin_reveal">
+                    <article class="meta_copy_item" data-meta-step="0">
+                        <!-- <h3>장내 균형</h3>
+                        <p>유익균 증식과 <br>건강한 장내 환경 형성</p> -->
+                        <span class="meta_desc">Microbiome Modulation</span>
+                        <h3 class="meta_tit">장 속 체질 개선</h3>
+                        <p class="meta_subtit">살찌는 장 환경부터 바꿉니다</p>
+                    </article>
+                    <article class="meta_copy_item" data-meta-step="1">
+                        <!-- <h3>대사산물 생성</h3>
+                        <p>단쇄지방산 등 <br>다양한 신호물질 생성</p> -->
+                        <span class="meta_desc">Inhibition of adipocyte differentiation</span>
+                        <h3 class="meta_tit">지방 세포 차단</h3>
+                        <p class="meta_subtit">새 지방은 막고, 쌓인 지방은 태웁니다</p>
+                    </article>
+                    <article class="meta_copy_item" data-meta-step="2">
+                        <!-- <h3>신호 전달</h3>
+                        <p>혈액·면역계·미주신경을 통해 <br>전신으로 전달</p> -->
+                        <span class="meta_desc">GLP-1-mediated metabolic regulation</span>
+                        <h3 class="meta_tit">자연 GLP-1 유도</h3>
+                        <p class="meta_subtit">체내 식욕·혈당 조절 호르몬을 깨웁니다</p>
+                    </article>
+                    <article class="meta_copy_item" data-meta-step="3">
+                        <!-- <h3>전신 대사 연결</h3>
+                        <p>뇌·간·근육·지방조직의 <br>대사 과정에 관여</p> -->
+                        <span class="meta_desc">improved metabolic hormone profile</span>
+                        <h3 class="meta_tit">뇌 &amp; 호르몬 균형</h3>
+                        <p class="meta_subtit">가짜 배고픔을 줄이고 포만감을 줍니다</p>
+                    </article>
+                </div>
+                <div class="inner">
+                    <div class="meta_orbit pin_reveal">
+                        <div class="intro_head mechanisms meta_orbit_core">
+                            <p class="intro_desc">효과적으로 작용하는</p>
+                            <p class="intro_tit">4종 작용기전</p>
+                        </div>
+                        <ul class="meta_grid">
+                            <li class="meta_slot">
+                                <div class="meta_item">
+                                    <span class="meta_video">
+                                        <video src="video/meta01.mp4" muted loop playsinline preload="auto"></video>
+                                    </span>
+                                   <!--  <span class="meta_desc">Microbiome Modulation</span>
+                                    <span class="meta_tit">장 속 체질 개선</span>
+                                    <span class="meta_subtit">살찌는<br>장 환경부터 바꿉니다</span> -->
+                                </div>
+                            </li>
+                            <li class="meta_slot">
+                                <div class="meta_item">
+                                    <span class="meta_video">
+                                        <video src="video/meta02.mp4" muted loop playsinline preload="auto"></video>
+                                    </span>
+                                    <!-- <span class="meta_desc">Inhibition of adipocyte differentiation</span>
+                                    <span class="meta_tit">지방 세포 차단</span>
+                                    <span class="meta_subtit">새 지방은 막고,<br>쌓인 지방은 태웁니다</span> -->
+                                </div>
+                            </li>
+                            <li class="meta_slot">
+                                <div class="meta_item">
+                                    <span class="meta_video">
+                                        <video src="video/meta03.mp4" muted loop playsinline preload="auto"></video>
+                                    </span>
+                                    <!-- <span class="meta_desc">GLP-1-mediated metabolic regulation</span>
+                                    <span class="meta_tit">자연 GLP-1 유도</span>
+                                    <span class="meta_subtit">체내 식욕·혈당 조절<br>호르몬을 깨웁니다</span> -->
+                                </div>
+                            </li>
+                            <li class="meta_slot">
+                                <div class="meta_item">
+                                    <span class="meta_video">
+                                        <video src="video/meta04.mp4" muted loop playsinline preload="auto"></video>
+                                    </span>
+                                    <!-- <span class="meta_desc">improved metabolic hormone profile</span>
+                                    <span class="meta_tit">뇌 &amp; 호르몬 균형</span>
+                                    <span class="meta_subtit">가짜 배고픔을 줄이고<br>포만감을 줍니다</span> -->
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sec_science">
+            <div class="science_bg_wrap" aria-hidden="true">
+                <div class="science_bg"></div>
+            </div>
+            <div class="inner science_layout">
+                <div class="science_copy reveal">
+                    <p class="section_tag">K-BIO ORIGIN</p>
+                    <p class="section_tit">한국에서 발견해,<br>세계로 향하는 K-바이오 원료.</p>
+                    <p class="section_desc">민들레김치에서 발견한 W. confusa WIKIM51.<br>한국 발효식품에서 찾은 하나의 균주를<br>연구와 검증을 거쳐 Wilac D001로 완성했습니다.</p>
+                </div>
+                <div class="science_content science_pin" data-science-pin>
+                    <div>
+                    <ul data-science-list>
+                        <li class="science_item" data-science-item="0">
+                            <p class="item_img">
+                                <img src="images/bio03.png" alt="">
+                            </p>
+                            <p class="item_info">
+                                <span class="item_tag">Microbiome Modulation</span>
+                                <span class="item_tit">민들레김치에서 시작된 발견</span>
+                                <span class="item_desc">한국의 발효식품 민들레김치에서<br>W. confusa WIKIM51을 발견했습니다.</span>
+                            </p>
+                        </li>
+                        <li class="science_item" data-science-item="1">
+                            <p class="item_img">
+                                <img src="images/bio01.png" alt="">
+                            </p>
+                            <p class="item_info">
+                                <span class="item_tag">STRAIN</span>
+                                <span class="item_tit">W. confusa WIKIM51</span>
+                                <span class="item_desc">발견한 미생물을 분리·동정하여<br>WIKIM51 균주를 확보했습니다.</span>
+                            </p>
+                        </li>
+                        <li class="science_item" data-science-item="2">
+                            <p class="item_img">
+                                <img src="images/bio02.png" alt="">
+                            </p>
+                            <p class="item_info">
+                                <span class="item_tag">Wilac D001</span>
+                                <span class="item_tit">PROPRIETARY INGREDIENT</span>
+                                <span class="item_desc">WIKIM51의 가능성을 연구하고 검증하여<br>체지방 감소 기능성 원료로 개발했습니다.</span>
+                            </p>
+                        </li>
+                    </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sec_cells">
+            <div class="inner cells_wrap">
+                <div class="cells_copy reveal">
+                    <p class="section_tag">LIVE PROBIOTICS</p>
+                    <p class="section_tit">살아 있는 균으로,<br>검증된 기능성까지.</p>
+                    <p class="section_desc">Wilac D001은 WIKIM51을 살아 있는<br>프로바이오틱스로 연구했습니다.<br>살아 있는 미생물이 가진 대사 활동과 장내 환경과의 <br>상호작용 가능성에 주목합니다.</p>
+                </div>
+                <div class="cells_content" data-cells-pin>
+                    <ul class="cells_list">
+                        <li class="cells_item" data-cells-item="0">
+                            <p class="item_info">
+                                <span class="item_num">01. LIVE</span>
+                                <span class="item_tit">살아 있는 프로바이오틱스</span>
+                                <span class="item_desc">생균상태로 제조·관리되는<br>W. confusa WIKIM51</span>
+                            </p>
+                        </li>
+                        <li class="cells_item" data-cells-item="1">
+                            <p class="item_info">
+                                <span class="item_num">02. METABOLIZE</span>
+                                <span class="item_tit">살아있어서 가능한 대사 활동</span>
+                                <span class="item_desc">살아 있는 미생물은 <br>주변 환경과 상호작용하며<br>대사 활동을 수행합니다.</span>
+                            </p>
+                        </li>
+                        <li class="cells_item" data-cells-item="2">
+                            <p class="item_info">
+                                <span class="item_num">03. INTERACT</span>
+                                <span class="item_tit">장내 환경과 상호작용</span>
+                                <span class="item_desc">장내 미생물 및 숙주 환경과<br>다양한 생리적 가능성으로 상호작용</span>
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cells_visual">
+                <video src="video/cells.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+        </section>
+
+        <section class="sec_wilac" data-wilac-pin>
+            <div class="inner">
+                <p class="wilac_copy" data-wilac-text>Wilac D001은<br>WIKIM51을 생균으로 연구하고,<br>인체적용시험을 통해<br>체지방 감소 기능성을 확인한<br>개별인정형 프로바이오틱스 원료입니다.</p>
+            </div>
+        </section>
+
+        <section class="sec_lineup">
+            <div class="inner">
+                <div class="cells_copy reveal">
+                    <p class="section_tag">PROPRIETARY STRAINS</p>
+                    <p class="section_tit">팜스빌의 독자<br>프로바이오틱스 원료</p>
+                </div>
+                <ul class="lineup_list">
+                    <li class="lineup_item">
+                        <div class="mark pink">
+                            <span class="mark mark1">
+                                <img src="images/cell_2_1.png" alt="">
+                            </span>
+                            <span class="mark mark2">
+                                <img src="images/cell_2_2.png" alt="">
+                            </span>
+                            <span class="mark mark3">
+                                <img src="images/cell_2_3.png" alt="">
+                            </span>
+                        </div>
+                        <p class="item_info">
+                            <span class="item_tit">Wilac D001</span>
+                            <span class="item_desc">WEIGHT<br>MANAGEMENT</span>
+                            <span class="item_text">W. confusa WIKIM51</span>
+                            <a href="#" class="item_btn"><span>VIEW MORE</span></a>
+                        </p>
+                    </li>
+                    <li class="lineup_item">
+                        <div class="mark pink">
+                            <span class="mark mark1">
+                                <img src="images/cell_3_1.png" alt="">
+                            </span>
+                            <span class="mark mark2">
+                                <img src="images/cell_3_2.png" alt="">
+                            </span>
+                            <span class="mark mark3">
+                                <img src="images/cell_3_3.png" alt="">
+                            </span>
+                        </div>
+                        <p class="item_info">
+                            <span class="item_tit">Wilac M002</span>
+                            <span class="item_desc">ENHANCES<br>MUSCLE STRENGTH</span>
+                            <span class="item_text">W. cibaria WIKIM0187</span>
+                            <a href="#" class="item_btn"><span>VIEW MORE</span></a>
+                        </p>
+                    </li>
+                    <li class="lineup_item">
+                        <div class="mark pink">
+                            <span class="mark mark1">
+                                <img src="images/cell_1_1.png" alt="">
+                            </span>
+                            <span class="mark mark2">
+                                <img src="images/cell_1_2.png" alt="">
+                            </span>
+                            <span class="mark mark3">
+                                <img src="images/cell_1_3.png" alt="">
+                            </span>
+                        </div>
+                        <p class="item_info">
+                            <span class="item_tit">Wilac L</span>
+                            <span class="item_desc">HANGOVER<br>RELIEF</span>
+                            <span class="item_text">Levilactobacillus brevis<br>WIKIM0168<br>Levilactobacillus mesenteroides<br>WIKIM0172</span>
+                            <a href="#" class="item_btn"><span>VIEW MORE</span></a>
+                        </p>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="sec_lab">
+            <div class="lab_bg">
+                <video src="video/lab.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+            <div class="inner">
+                <p class="section_tit">연구에서 제품까지<br>건강을 과학적으로 설계합니다</p>
+                <p class="section_desc">MICROBIOME SCIENCE FOR HUMAN HEALTH</p>
+                <p class="lab_btn">
+                    <a href="#">
+                        <span>회사소개  &gt;</span>
+                    </a>
+                </p>
+            </div>
+        </section>
+
+        <section class="sec_introduce">
+            <div class="inner">
+                <div class="introduce_mission">
+                    <div class="mission_box mission_tit">
+                        <p>Mission</p>
+                    </div>
+                    <div class="mission_box mission_desc">
+                        팜스빌은 마이크로바이옴과 프로바이오틱스분야의 전문성을 바탕으로 과학적 근거 기반의 건강 솔루션을 개발합니다. 균주와 포뮬러 연구부터 제품 기획, 품질관리, 고객관리까지 전 과정을 체계적으로 연결하는
+                        원스톱 헬스케어 기업입니다.
+                    </div>
+                </div>
+                <div class="introduce_visual">
+                    <video src="video/11_vd.mp4" muted loop playsinline preload="metadata"></video>
+                </div>
+                <div class="introduce_boxes">
+                    <div class="introduce_box tit_box">
+                        <p class="box_banner">
+                            Microbiome-<br>
+                            based<br>
+                            Healthcare<br>
+                            Solution
+                        </p>
+                    </div>
+                    <div class="introduce_box text_box">
+                        <p class="box_tit">마이크로바이옴 연구기반, 새로운 가능성을 제시하는<br>바이오 헬스케어 전문기업 팜스빌</p>
+                        <p class="box_desc">
+                            마이크로바이옴 연구를 기반으로 새로운 가능성을 제시하는 바이오 헬스케어 기업입니다. 프로바이오틱스 균주의 특성과 기능성, 배합 간 상호작용, 제품 적용 가능성을 종합적으로 연구해 차별화된 포뮬러를 개발합니다. 장내 미생물 생태계와 프로바이오틱스에 대한 이해를 바탕으로 개인의 건강과 균형을 고려한 솔루션을 개발합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site_footer">
+        <div class="footer_inner">
+            <div class="footer_brand">
+                <div class="logo">
+                    <a href="index.html">
+                        <span class="sr_only">PHARMSVILLE</span>
+                    </a>
+                </div>
+            </div>
+            <div class="footer_info">
+                <ul class="footer_links">
+                    <li><a href="#">그린프로폴리스</a></li>
+                    <li><a href="#">벨기에 다이어트</a></li>
+                    <li><a href="#">관절살리도 골드</a></li>
+                    <li><a href="#">플라센타 콜라겐</a></li>
+                    <li><a href="#">바로느껴지는 미인콜라겐</a></li>
+                    <li><a href="#">초임계 오메가3</a></li>
+                    <li><a href="#">바로느껴지는 레몬밤</a></li>
+                    <li><a href="#">닥터지 유산균</a></li>
+                    <li><a href="#">혈당살리도</a></li>
+                    <li><a href="#">그린엽산 400</a></li>
+                </ul>
+                <div class="footer_company">
+                    <p>주식회사 팜스빌 | 대표이사 이병욱 | 사업자등록번호 : 120-86-01608</p>
+                    <p>Tel : 02-553-1323 | Fax : 02-6952-7559</p>
+                    <p>E-mail : pharmsville@gmail.com</p>
+                    <p>본사 : 서울특별시 강서구 마곡중앙8로 3길 37(마곡동) 팜스빌 B/D</p>
+                    <p>팜스빌 바이오랩 : 서울특별시 송파구 법원로9길 26, 씨동 1층 22호(문정동, 에이치비즈니스파크)</p>
+                    <p>헬스코치생명공학 : 전라남도 장흥군 장흥읍 산단1로 50, 천연자원연구센터 창업보육센터 2015실 (전라남도생물산업진흥원)</p>
+                </div>
+                <p class="footer_copy">Copyright @ Pharmsville. All rights reserved.</p>
+            </div>
+            <div class="footer_sns">
+                <p class="sns_tit">SNS</p>
+                <div class="sns_group">
+                    <p class="sns_name">애플트리김약사네</p>
+                    <ul class="sns_list">
+                        <li><a href="#" aria-label="인스타그램"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 3h9A4.5 4.5 0 0 1 21 7.5v9A4.5 4.5 0 0 1 16.5 21h-9A4.5 4.5 0 0 1 3 16.5v-9A4.5 4.5 0 0 1 7.5 3zm0 1.7A2.8 2.8 0 0 0 4.7 7.5v9A2.8 2.8 0 0 0 7.5 19.3h9a2.8 2.8 0 0 0 2.8-2.8v-9a2.8 2.8 0 0 0-2.8-2.8h-9zM12 8.1A3.9 3.9 0 1 1 8.1 12 3.9 3.9 0 0 1 12 8.1zm0 1.7A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8zm5.05-2.85a1.05 1.05 0 1 1-1.05 1.05 1.05 1.05 0 0 1 1.05-1.05z"/></svg></a></li>
+                        <li><a href="#" aria-label="블로그"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm1.6 4.2v7.6h2.1v-2.8h.7c1.7 0 2.7-1 2.7-2.4s-1-2.4-2.7-2.4H7.6zm2.1 1.7h.55c.7 0 1.05.35 1.05.9s-.35.9-1.05.9H9.7V9.9zM15.2 8.2h-2v7.6h2V8.2z"/></svg></a></li>
+                        <li><a href="#" aria-label="페이스북"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.2 8.4h2.3V5.2h-2.3c-2.4 0-4 1.6-4 4.1v1.6H8.2v3.2h2V21h3.3v-6.9h2.4l.5-3.2h-2.9V9.4c0-.6.3-1 .7-1z"/></svg></a></li>
+                        <li><a href="#" aria-label="틱톡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.2 3h2.3c.2 1.7 1.2 3.2 2.8 4.1v2.4c-1.1 0-2.1-.3-3-1v6.3A6.1 6.1 0 1 1 9.4 8.8v2.5a3.6 3.6 0 1 0 2.5 3.4V3h2.3z"/></svg></a></li>
+                        <li><a href="#" aria-label="카카오톡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.2c-4.6 0-8.3 2.9-8.3 6.5 0 2.3 1.5 4.4 3.8 5.6l-.9 3.3 3.7-2c.5.1 1.1.1 1.7.1 4.6 0 8.3-2.9 8.3-6.5S16.6 4.2 12 4.2z"/></svg></a></li>
+                        <li><a href="#" aria-label="유튜브"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 8.2a3 3 0 0 0-2.1-2.1C17.6 5.7 12 5.7 12 5.7s-5.6 0-7.4.4A3 3 0 0 0 2.5 8.2 31 31 0 0 0 2.1 12a31 31 0 0 0 .4 3.8 3 3 0 0 0 2.1 2.1c1.8.4 7.4.4 7.4.4s5.6 0 7.4-.4a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-3.8 31 31 0 0 0-.4-3.8zM10.2 15.1V8.9L15.6 12l-5.4 3.1z"/></svg></a></li>
+                    </ul>
+                </div>
+                <div class="sns_group">
+                    <p class="sns_name">악마다이어트</p>
+                    <ul class="sns_list">
+                        <li><a href="#" aria-label="인스타그램"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 3h9A4.5 4.5 0 0 1 21 7.5v9A4.5 4.5 0 0 1 16.5 21h-9A4.5 4.5 0 0 1 3 16.5v-9A4.5 4.5 0 0 1 7.5 3zm0 1.7A2.8 2.8 0 0 0 4.7 7.5v9A2.8 2.8 0 0 0 7.5 19.3h9a2.8 2.8 0 0 0 2.8-2.8v-9a2.8 2.8 0 0 0-2.8-2.8h-9zM12 8.1A3.9 3.9 0 1 1 8.1 12 3.9 3.9 0 0 1 12 8.1zm0 1.7A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8zm5.05-2.85a1.05 1.05 0 1 1-1.05 1.05 1.05 1.05 0 0 1 1.05-1.05z"/></svg></a></li>
+                        <li><a href="#" aria-label="블로그"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm1.6 4.2v7.6h2.1v-2.8h.7c1.7 0 2.7-1 2.7-2.4s-1-2.4-2.7-2.4H7.6zm2.1 1.7h.55c.7 0 1.05.35 1.05.9s-.35.9-1.05.9H9.7V9.9zM15.2 8.2h-2v7.6h2V8.2z"/></svg></a></li>
+                        <li><a href="#" aria-label="페이스북"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.2 8.4h2.3V5.2h-2.3c-2.4 0-4 1.6-4 4.1v1.6H8.2v3.2h2V21h3.3v-6.9h2.4l.5-3.2h-2.9V9.4c0-.6.3-1 .7-1z"/></svg></a></li>
+                        <li><a href="#" aria-label="카페"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h11a1 1 0 0 1 1 1v1.6h1.2A2.8 2.8 0 0 1 21 11.4 2.8 2.8 0 0 1 18.2 14H17v1.2A4.2 4.2 0 0 1 12.8 19H9.2A4.2 4.2 0 0 1 5 14.8V7a1 1 0 0 1 1-1zm12 3.6v2.6h1.2a1.1 1.1 0 0 0 0-2.2H17zM6.8 20h10.4v1.6H6.8z"/></svg></a></li>
+                        <li><a href="#" aria-label="카카오톡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.2c-4.6 0-8.3 2.9-8.3 6.5 0 2.3 1.5 4.4 3.8 5.6l-.9 3.3 3.7-2c.5.1 1.1.1 1.7.1 4.6 0 8.3-2.9 8.3-6.5S16.6 4.2 12 4.2z"/></svg></a></li>
+                        <li><a href="#" aria-label="유튜브"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 8.2a3 3 0 0 0-2.1-2.1C17.6 5.7 12 5.7 12 5.7s-5.6 0-7.4.4A3 3 0 0 0 2.5 8.2 31 31 0 0 0 2.1 12a31 31 0 0 0 .4 3.8 3 3 0 0 0 2.1 2.1c1.8.4 7.4.4 7.4.4s5.6 0 7.4-.4a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-3.8 31 31 0 0 0-.4-3.8zM10.2 15.1V8.9L15.6 12l-5.4 3.1z"/></svg></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
 </html>

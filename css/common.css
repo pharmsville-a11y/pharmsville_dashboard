@@ -1,0 +1,40 @@
+:root{
+  --navy:#050b18;
+  --navy-2:#0a1630;
+  --navy-3:#102044;
+  --cyan:#3ee7ff;
+  --blue:#4f8cff;
+  --purple:#8b6cff;
+  --green:#3dffb0;
+  --orange:#ff6b00;
+  --text:#101828;
+  --muted:#667085;
+  --line:#e6eaf0;
+  --bg:#f5f7fb;
+  --white:#fff;
+  --header-h:80px;
+  --inner:1200px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:auto;}
+html,body,input,textarea,select,button{
+  font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  font-synthesis:none;
+  letter-spacing: -0.02em;
+}
+body{color:var(--text);background:#fff;line-height:1.5;overflow-x:hidden;word-break:keep-all;}
+body.is_lock{overflow:hidden;}
+a{text-decoration:none;color:inherit;}
+li{list-style:none;}
+img{vertical-align:middle;max-width:100%;}
+button{font-family:inherit;}
+.inner{width:min(100%,var(--inner));margin:0 auto;padding:0 40px;}
+.sr_only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}
+@media (max-width:1024px){
+  :root{--header-h:64px;}
+  .inner{padding:0 24px;}
+}
+@media (max-width:768px){
+  .inner{padding:0 18px;}
+}

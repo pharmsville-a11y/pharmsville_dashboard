@@ -1,0 +1,40 @@
+.site_footer{background:#1a1a1a;color:#fff;padding:90px 0 70px;}
+.site_footer .footer_inner{width:min(100%,1200px);margin:0 auto;padding:0 80px;display:grid;grid-template-columns:120px minmax(0,1fr) 200px;gap:48px 72px;align-items:start;}
+.site_footer .footer_brand{padding-top:4px;}
+.site_footer .footer_brand .logo {width:120px;height:50px;background:url(../images/logo.png) no-repeat 0 0 / 100% auto;}
+.site_footer .footer_brand .logo a{display:flex;width:100%;height:100%;}
+.site_footer .brand_tag{margin:0 0 10px;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-style:italic;font-weight:500;font-size:12px;line-height:1.4;letter-spacing:.02em;color:rgba(255,255,255,.82);white-space:nowrap;}
+.site_footer .brand_logo{display:flex;flex-direction:column;align-items:center;width:fit-content;color:#fff;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:700;line-height:.92;letter-spacing:.04em;}
+.site_footer .brand_pharms{display:block;font-size:42px;}
+.site_footer .brand_pharms sup{font-size:.38em;top:-.85em;margin-left:1px;}
+.site_footer .brand_ville{display:block;font-size:42px;padding-left:.18em;}
+.site_footer .footer_links{display:grid;grid-template-columns:repeat(5,max-content);gap:10px 32px;margin:0 0 18px;padding:0 0 16px;border-bottom:1px solid rgba(255,255,255,.22);}
+.site_footer .footer_links a{font-size:13px;line-height:1.4;color:rgba(255,255,255,.72);white-space:nowrap;}
+.site_footer .footer_links a:hover{color:#fff;}
+.site_footer .footer_company p{margin:0;font-size:13px;line-height:1.75;color:rgba(255,255,255,.82);}
+.site_footer .footer_copy{margin:28px 0 0;font-size:12px;line-height:1.5;color:rgba(255,255,255,.38);}
+.site_footer .sns_tit{margin:0 0 16px;padding:0 0 10px;border-bottom:1px solid rgba(255,255,255,.22);font-size:14px;font-weight:600;letter-spacing:.04em;}
+.site_footer .sns_group + .sns_group{margin-top:18px;}
+.site_footer .sns_name{margin:0 0 8px;font-size:13px;color:rgba(255,255,255,.9);}
+.site_footer .sns_list{display:flex;align-items:center;gap:10px;margin:0;}
+.site_footer .sns_list a{display:flex;align-items:center;justify-content:center;width:22px;height:22px;color:#fff;opacity:.92;}
+.site_footer .sns_list a:hover{opacity:1;}
+.site_footer .sns_list svg{width:100%;height:100%;fill:currentColor;display:block;}
+
+@media (max-width:1200px){
+  .site_footer{padding:72px 0 56px;}
+  .site_footer .footer_inner{padding:0 40px;grid-template-columns:120px minmax(0,1fr) 200px;gap:36px 40px;}
+  .site_footer .footer_links{grid-template-columns:repeat(3,max-content);gap:10px 24px;}
+  .site_footer .brand_pharms,.site_footer .brand_ville{font-size:36px;}
+}
+@media (max-width:900px){
+  .site_footer .footer_inner{grid-template-columns:1fr;padding:0 24px;gap:36px;}
+  .site_footer .footer_links{grid-template-columns:repeat(2,max-content);}
+  .site_footer .brand_tag{white-space:normal;}
+}
+@media (max-width:768px){
+  .site_footer{padding:56px 0 40px;}
+  .site_footer .footer_inner{padding:0 18px;}
+  .site_footer .footer_links{grid-template-columns:1fr;gap:8px;}
+  .site_footer .footer_links a{white-space:normal;}
+}
